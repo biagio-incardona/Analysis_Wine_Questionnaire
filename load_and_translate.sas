@@ -118,8 +118,8 @@ RUN;
 /*BUG: only process the first element in the list of choices*/
 data want;
 	set TRY;
-	do i = 1 to countw(BUYING_REASON, ","); /* #1 */
-		%let reason = scan(BUYING_REASON, i, ","); /* #2 */
+	do i = 1 to countw(BUYING_REASON, ", "); /* #1 */
+		%let reason = STRIP(scan(BUYING_REASON, i, ",")); /* #2 */
 		IF &reason = "Home consumption" or &reason = "Consumo casalingo" THEN REASON_HOME = 1;
 		IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
 		IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
