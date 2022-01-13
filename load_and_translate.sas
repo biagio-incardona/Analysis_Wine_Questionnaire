@@ -1,4 +1,4 @@
-/* import dataset */
+/* import datasets */
 
 PROC IMPORT OUT=Wine_IT
 	DATAFILE="/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx"
@@ -24,20 +24,24 @@ RUN;
 
 /*TRANSLATE ITALIAN DATASET TO ENGLISH*/
 
+/*load the naming convention in a list*/
 proc sql noprint;
 select 'Naming_convention'n into :collist separated by ' ' 
 from Naming_Convention nc;
 quit;
 
+/*length of the list, how many variables*/
 %let len = %sysfunc(countw(&collist));
 
-data a;
+/*in order to do not modify the original dataset, at the end we will remove this step*/
+data tmp_Wine_IT;
 	set Wine_IT;
 run;
 
+/*defined a sort of dictionary to translate, it is the fastest structure i was able to find*/
 proc format;
 value $translate
-	"Mai assaggiato"="Never tasted"
+	"Mai assaggiato" = "Never tasted"
  	"Si"  = "Yes"
  	"Nessuna"  = "None"
 	 "Di base (conoscenza amatoriale)"  = "Basic (amateur knowledge level)"
@@ -60,10 +64,10 @@ value $translate
 	 "30€ - meno di 45€"  = "30€ to less than 45€"
 	 "45€ - meno di 60€"  = "45€ to less than 50€"
 	 "60€ o più"  = "60€ and more "
-	 "Consumo casalingo"  = "Home consumption "
-	 "Per un regalo"  = "To buy a gift "
-	 "Per un evento speciale/una festa"  = "For a special event/party "
-	 "Per provare un nuovo vino"  = "To try a new wine "
+/*	 "Consumo casalingo"  = "Home consumption"
+	 "Per un regalo"  = "To buy a gift"
+	 "Per un evento speciale/una festa"  = "REASON_PARTY"
+	 "Per provare un nuovo vino"  = "REASON_TRY"*/
 	 "Non lo so"  = "I don't know "
 	 "Donna"  = "Female "
 	 "Uomo"  = "Male "
@@ -82,23 +86,45 @@ value $translate
 	 "Pensionato"  = "Retired "
 	 "Casalinga/o"  = "Housewife/Housemen ";
 run;
-	
-	
 
+
+/*macro to translate the italian responses*/
 %macro translate;
-	/*implement: define hash table specifying keys and values*/
     %do i = 1 %to &len;
         %let j = %scan(&collist,&i);
-        data a;
-        set a;
-		/*implement: if the element in column j is in the set of keys, then substitute it with the
-		correspective in the hash table*/
-		format &j translate.;
-        keep &collist;
+        data tmp_Wine_IT;
+        	set tmp_Wine_IT;
+			format &j translate.;
         run;
     %end;
 %mend;
 %translate;
 
+DATA Translated_Wine_IT;
+	SET tmp_Wine_IT;
+RUN;
 
+/*add the dummy variables*/
+DATA TRY;
+	SET TRANSLATED_WINE_IT;
+	ROWNUM=_N_;
+	REASON_PARTY = 0;
+	REASON_GIFT = 0;
+	REASON_HOME = 0;
+	REASON_TRY = 0;
+RUN;
 
+/*split the reasons in the dummy variables*/
+/*BUG: only process the first element in the list of choices*/
+data want;
+	set TRY;
+	do i = 1 to countw(BUYING_REASON, ","); /* #1 */
+		%let reason = scan(BUYING_REASON, i, ","); /* #2 */
+		IF &reason = "Home consumption" or &reason = "Consumo casalingo" THEN REASON_HOME = 1;
+		IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
+		IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
+		IF &reason = "To try a new wine" OR &reason = "Per provare un nuovo vino" THEN reason_try = 1;
+		IF &reason = "" THEN reason_try = 2;
+		/*output;*/
+	end;
+run;
