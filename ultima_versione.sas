@@ -170,6 +170,16 @@ run;
 
 /*now we convert variables from character to numeric */
 
+/*NO IDEA IF THIS IS WHAT YOU WANTED TO ACHIEVE*/
+DATA FINAL_L; 
+SET DUMMIFIED_WINE_EN_sub;
+IF WHITE_WINE = "Never tasted" THEN WHITE_WINE = -1;
+IF RED_WINE = "Never tasted" THEN RED_WINE = -1;
+IF ROSE_WINE = "Never tasted" THEN ROSE_WINE = -1;
+IF SWEET_WINE = "Never tasted" THEN SWEET_WINE = -1;
+IF SPARKLING_WINE = "Never tasted" THEN SPARKLING_WINE = -1;
+RUN;
+/*
 Data final_1 (drop = ROSE_WINE SPARKLING_WINE SWEET_WINE);
 Set DUMMIFIED_WINE_EN_sub;
 Array old_var(3) $ ROSE_WINE SPARKLING_WINE SWEET_WINE;
@@ -188,6 +198,7 @@ var3= SWEET_WINE;
 END;
 
 run;
+*/
 
 PROC PRINT DATA=FINAL_L;
 RUN;
