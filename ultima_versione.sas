@@ -1,21 +1,22 @@
 /* import datasets */
-
+/*BIAGIO FILE PATH, DON'T REMOVE PLEASE:
+C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES.xlsx*/
 PROC IMPORT OUT=Wine_IT
-	DATAFILE="C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE=""
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="IT";
 RUN;
 
 PROC IMPORT OUT=Wine_EN
-	DATAFILE="C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE=""
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
 
 PROC IMPORT OUT=Naming_Convention
-	DATAFILE="C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE=""
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
@@ -64,10 +65,6 @@ value $translate
 	 "30€ - meno di 45€"  = "30€ to less than 45€"
 	 "45€ - meno di 60€"  = "45€ to less than 50€"
 	 "60€ o più"  = "60€ and more "
-/*	 "Consumo casalingo"  = "Home consumption"
-	 "Per un regalo"  = "To buy a gift"
-	 "Per un evento speciale/una festa"  = "REASON_PARTY"
-	 "Per provare un nuovo vino"  = "REASON_TRY" */
 	 "Non lo so"  = "I don't know "
 	 "Donna"  = "Female "
 	 "Uomo"  = "Male "
@@ -107,47 +104,41 @@ RUN;
 
 
 /*add the dummy variables*/
-DATA TRY;
+DATA DUMMIFIED_WINE_IT;
 	SET TRANSLATED_WINE_IT;
-	ROWNUM=_N_;
 	REASON_PARTY = 0;
 	REASON_GIFT = 0;
 	REASON_HOME = 0;
 	REASON_TRY = 0;
 RUN;
 
-
-
-
 /*split the reasons in the dummy variables*/
-data want;
-	set TRY;
-	do i = 1 to countw(BUYING_REASON, ", "); /* #1 */
-		%let reason = STRIP(scan(BUYING_REASON, i, ",")); /* #2 */
+data DUMMIFIED_WINE_IT (DROP = I);
+	set DUMMIFIED_WINE_IT;
+	do i = 1 to countw(BUYING_REASON, ", ");
+		%let reason = STRIP(scan(BUYING_REASON, i, ","));
 		IF &reason = "Home consumption" or &reason = "Consumo casalingo" THEN REASON_HOME = 1;
-		IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
-		IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
-		IF &reason = "To try a new wine" OR &reason = "Per provare un nuovo vino" THEN reason_try = 1;
-		IF &reason = "" THEN reason_try = 2;
-		/*output;*/
+		ELSE IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
+		ELSE IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
+		ELSE IF &reason = "To try a new wine" OR &reason = "Per provare un nuovo vino" THEN reason_try = 1;
+		ELSE IF &REASON NE "" THEN reason_try = &REASON;
 	end;
-	
 run;
+
 /* we consider just the first 120 rowa */ 
-DATA want_sub;
-set want ;
+DATA DUMMIFIED_WINE_IT_sub;
+set DUMMIFIED_WINE_IT ;
 if _N_ <= 120 then output;
 run; 
-proc print data= want_sub;run;
+proc print data= DUMMIFIED_WINE_IT_sub;run;
 
 /* create a temporary tmp_wine_en*/
 data tmp_Wine_EN;
 	set Wine_EN;
 run;
 /* adding dummy */
-DATA TRY_en;
+DATA DUMMIFIED_WINE_EN;
 	SET tmp_Wine_EN;
-	ROWNUM=_N_;
 	REASON_PARTY = 0;
 	REASON_GIFT = 0;
 	REASON_HOME = 0;
@@ -155,28 +146,32 @@ DATA TRY_en;
 RUN;
 
 /*split the reasons in the dummy variables*/
-data want_en;
-	set TRY_en;
+data DUMMIFIED_WINE_EN (DROP = I);
+	set DUMMIFIED_WINE_EN;
 	do i = 1 to countw(BUYING_REASON, ", "); /* #1 */
 		%let reason = STRIP(scan(BUYING_REASON, i, ",")); /* #2 */
 		IF &reason = "Home consumption" or &reason = "Consumo casalingo" THEN REASON_HOME = 1;
-		IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
-		IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
-		IF &reason = "To try a new wine" OR &reason = "Per provare un nuovo vino" THEN reason_try = 1;
-		IF &reason = "" THEN reason_try = 2;
-		/*output;*/
+		ELSE IF &reason = "To buy a gift" OR &reason = "Per un regalo" then reason_gift = 1;
+		ELSE IF &reason = "For a special event/party" or &reason = "Per un evento speciale/una festa" then reason_party = 1;
+		ELSE IF &reason = "To try a new wine" OR &reason = "Per provare un nuovo vino" THEN reason_try = 1;
+		ELSE IF &REASON NE "" THEN reason_try = &REASON;
 	end;
-	
 run;
 
+PROC PRINT DATA=DUMMIFIED_WINE_EN;
+RUN;
+
 /*consider the first 45 rows*/
-DATA want_en_sub;
-set want_en ;
+DATA DUMMIFIED_WINE_EN_sub;
+set DUMMIFIED_WINE_EN ;
 if _N_ <= 45 then output;
 run;
+
+
 /*now we convert variables from character to numeric */
+
 Data final_1 (drop = ROSE_WINE SPARKLING_WINE SWEET_WINE);
-Set want_en_sub;
+Set DUMMIFIED_WINE_EN_sub;
 Array old_var(3) $ ROSE_WINE SPARKLING_WINE SWEET_WINE;
 Array new_var(3) var1-var3;
 Do i = 1 to 3;
@@ -194,6 +189,8 @@ END;
 
 run;
 
+PROC PRINT DATA=FINAL_L;
+RUN;
 
 /* THEN WE CAN JOIN THE 2 DATASETS*/
 
