@@ -25,6 +25,18 @@ PROC IMPORT OUT=Naming_Convention
 	SHEET="NAMING CONVENTION";
 RUN;
 
+/*resize datasets*/
+
+DATA WINE_IT_sub;
+set WINE_IT;
+if _N_ <= 120 then output;
+run; 
+
+DATA WINE_EN_sub;
+set Wine_EN;
+if _N_ <= 45 then output;
+run;
+
 
 /*TRANSLATE ITALIAN DATASET TO ENGLISH*/
 
@@ -39,7 +51,7 @@ quit;
 
 /*in order to do not modify the original dataset, at the end we will remove this step*/
 data tmp_Wine_IT;
-	set Wine_IT;
+	set Wine_IT_sub;
 run;
 
 /*defined a sort of dictionary to translate, it is the fastest structure i was able to find*/
@@ -100,27 +112,11 @@ run;
 %translate;
  
 
-DATA Translated_Wine_IT;
+DATA Translated_Wine_IT_sub;
 	SET tmp_Wine_IT;
 RUN;
 
 
-/* we consider just the first 120 rows */ 
-DATA TRANSLATED_WINE_IT_sub;
-set TRANSLATED_WINE_IT;
-if _N_ <= 120 then output;
-run; 
-
-proc print data= TRANSLATED_WINE_IT_sub;run;
-
-/*consider the first 45 rows*/
-DATA WINE_EN_sub;
-set Wine_EN;
-if _N_ <= 45 then output;
-run;
-
-/*we basically have 2 subsets of 45 and 120 rows (english and italian version )
-want_en_sub and want_sub
 /*now we convert variables from character to numeric the english version*/
 
 Data COL_CONVERTED_EN (drop = WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE  );
