@@ -1,21 +1,21 @@
 /* import datasets */
 
 PROC IMPORT OUT=Wine_IT
-	DATAFILE="/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE="C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\WINE_SURVEY_RESPONSES.xlsx"
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="IT";
 RUN;
 
 PROC IMPORT OUT=Wine_EN
-	DATAFILE="/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE="C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\WINE_SURVEY_RESPONSES.xlsx"
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
 
 PROC IMPORT OUT=Naming_Convention
-	DATAFILE="/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx"
+	DATAFILE="C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\WINE_SURVEY_RESPONSES.xlsx"
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
