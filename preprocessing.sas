@@ -207,6 +207,7 @@ set APPENDED_DATASET;
 												   	 "To try a new wine");
 	do i = 1 to 4;
 		BUYING_REASON = tranwrd(BUYING_REASON, strip(choices_english[i]), strip(choices[i]));
+		BUYING_REASON = tranwrd(BUYING_REASON, strip(choices_italian[i]), strip(choices[i]));
 	end;
 run;
 
