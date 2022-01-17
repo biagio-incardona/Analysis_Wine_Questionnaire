@@ -1,38 +1,41 @@
-/*RUN AFTER load_and_translate*/
 /*HANDELING MISSING VALUE*/
-/*Imputing Categorical values: WINE_BOTTLES BOTTLE_BUDGET buying_reason etna_buying gender 
-	EDUCATION L19OCATION JOB */
-
-data wine_categorical;
-	set a;
- 	Orig_WINE_BOTTLES = WINE_BOTTLES;
-	if missing(WINE_BOTTLES) then WINE_BOTTLES = 0; /* replace 0 with mode*/
-	
+/*Imputing Categorical values with mode */
+proc freq data=reordered_final_version order=ferq noprint;
+	TABLES  WINE_BOTTLES bottle_budget etna_buying buying_reason/NOPERCENT NOCUM 
+		out=WINE_BOTTLES_freq bottle_budget_freq etna_buying_freq buying_reason_freq; 
 run;
-
-/*Imputing Continus values: 
-	SuperMarket Wine_Shop Online_Shop Grape_Origin Grape_Variety Budget_Friendly Brand_awerness Vintage 
-	Label_info packing promotion buying_frequency etna_prefrances etna_flavor SICILIAN_EXCELLENCES 
-	ETNA_EXPENSIVE ETNA_QUALITY ETNA_RECOMMENDATION age*/
- 
-proc stdize data=wine_categorical out=wine_continus 
-      oprefix=Orig_         
-      reponly      
-	  method= MEAN;          /* or MEDIAN*/
-   var  SuperMarket--promotion 
-		buying_frequency 
-		ETNA_PREFERENCE--ETNA_RECOMMENDATION 
-		age; 
+proc sql noprint; 
+	select WINE_BOTTLES into :mode_bottles from WINE_BOTTLES_freq(obs=1) where WINE_BOTTLES is not null;
+	select bottle_budget into :mode_budget from bottle_budget_freq(obs=1) where bottle_budget is not null;
+	select etna_buying into :mode_buying from etna_buying_freq(obs=1) where etna_buying is not null;
+	select buying_reason into :mode_reason from buying_reason_freq(obs=1) where buying_reason is not null;
+quit;
+%PUT &mtitle;
+data wine_categorical;
+	set reordered_final_version;
+	if missing(WINE_BOTTLES) then WINE_BOTTLES = "1-3 bottles";
+	if missing(bottle_budget) then bottle_budget = "5€ to less than 15€"; 
+	if missing(etna_buying) then etna_buying = "Yes"; 
+	if missing(buying_reason) then buying_reason = "home";  
+run;
+/*Imputing Numeric values with mean value*/
+proc stdize data=wine_categorical out=wine_numeric  
+   REPONLY
+   method= MEDIAN;          /* or MEDIAN*/
+   var  WINE_PREFERENCE--SWEET_WINE  
+		SUPERMARKET--PROMOTION  
+		BUYING_FREQUENCY 
+		ETNA_PREFERENCE--ETNA_RECOMMENDATION ; 
 run;
 /* Round Imputed Values*/
 data wine_imputed;
-	set wine_continus;
-	array continus_variables[19]SuperMarket--age;
-	do i=1 to 19;
-		continus_variables[i] = round(continus_variables[i]);
+	set wine_numeric;
+	array _nums {*} _numeric_;
+	do i = 1 to dim(_nums);
+  		_nums{i} = round(_nums{i});
 	end;
 	drop i;
 run;
+proc print data=wine_imputed;
 
-
-
+run;

@@ -1,0 +1,1148 @@
+/* change "never" in sweet_wine to 0, this part should be handeled somewhere else but for now I do it here
+	Also change "si" to 1 and "no" to 0 in WINE_TASTING WINERY_VISIT WINE_COURSE this also should be decided and
+	handel elsewhere
+	Also change "man" to 1 and "women" to 0 in gender this also should be decided and
+	handel elsewhere
+*/
+data wine_fix;
+	set wine_imputed;
+	if index(SWEET_WINE, 'Mai assaggiato')>0 then SWEET_WINE = 0; 
+	if index(WHITE_WINE, 'Mai assaggiato')>0 then WHITE_WINE = 0; 
+	if index(rose_WINE, 'Mai assaggiato')>0 then rose_WINE = 0;
+	if index(sparkling_WINE, 'Mai assaggiato')>0 then sparkling_WINE = 0;
+	if index(WINE_TASTING, 'Si')>0 then WINE_TASTING  = 1;
+	if index(WINERY_VISIT, 'Si')>0 then WINERY_VISIT  = 1;
+	if index(WINE_COURSE, 'Si')>0 then WINE_COURSE = 1;
+	if index(WINE_TASTING, 'No')>0 then WINE_TASTING  = 0;
+	if index(WINERY_VISIT, 'No')>0 then WINERY_VISIT  = 0;
+	if index(WINE_COURSE, 'No')>0 then WINE_COURSE = 0;
+	if index(ETNA_DOC  , 'Si')>0 then ETNA_DOC = 1;
+	if index(ETNA_DOC, 'No')>0 then ETNA_DOC  = 0;
+	if index(ETNA_BUYING  , 'Si')>0 then ETNA_BUYING = 1;
+	if index(ETNA_BUYING, 'No')>0 then ETNA_BUYING  = 0;
+	if index(gender  , 'Donna')>0 then gender = 1;
+	if index(gender, 'Uomo')>0 then gender  = 0;
+	
+run;
+/* Drop unnumeric variables */
+data wine_numeric;
+	set wine_fix;
+	drop date version WINE_KNOWLEDGE--WINE_BOTTLES BOTTLE_BUDGET BUYING_REASON  EDUCATION--JOB ;
+run;
+
+proc print data=wine_numeric;
+	
+run;
+
+ods graphics on;
+ods trace on;
+/*
+ORIGINAL VARIABLES CORRELATION MATRIX
+*/
+PROC CORR DATA=wine_numeric NOPRINT 
+		   OUT=DF_CORR(WHERE=(_TYPE_='CORR'));
+VAR WINE_PREFERENCE--COCKTAIL_PREFERENCE; 
+WITH WINE_PREFERENCE--COCKTAIL_PREFERENCE;
+RUN;
+
+PROC PRINT DATA=DF_CORR ;
+RUN;
+
+/*
+PRINCIPAL COMPONENT ANALYSIS
+*/
+PROC PRINCOMP  DATA=DF_CORR 
+			OUT=DF_PCA 
+			OUTSTAT=DF_EIGENX
+			NOPRINT
+			PLOTS(ONLY)=MATRIX
+			PLOTS(ONLY)=PATTERNPROFILE
+			PLOTS(ONLY)=SCORE 
+			N=20 /* DEPENDS ON EXPLAINED VARIANCE RESULTS */
+			STD COV;
+VAR WINE_PREFERENCE--COCKTAIL_PREFERENCE;
+RUN;
+
+/*
+CORRELATION OF PCs WITH THE ORIGINAL VARIABLES
+*/
+
+PROC CORR DATA=DF_PCA NOPRINT 
+		   OUT=PCA_CORR(WHERE=(_TYPE_='CORR'));
+VAR PRIN1--PRIN20; 
+WITH item_2 item_10--item_22;
+RUN;
+PROC PRINT DATA=PCA_CORR ROUND ;
+RUN;
+
+/*
+COSINES CALCULATION
+*/
+
+/* STANDARDIZATION*/
+PROC STANDARD DATA=DF_PCA MEAN=0 STD=1 OUT=VARS_STD_PRIN;
+VAR item_10--item_22;
+RUN;
+
+/* 
+COSINES 
+LOW VALUES MEAN THAT THE OBSERVATION IS NOT WELL-REPRESENTED BY THE PC 
+*/
+
+DATA VARS_STD_PRIN;
+SET VARS_STD_PRIN;
+DIST_ORIG=USS(OF item_10--item_22); 
+COS_1_1=USS(OF PRIN1--PRIN1)/ DIST_ORIG;
+COS_1_2=USS(OF PRIN1--PRIN2)/ DIST_ORIG;
+COS_1_3=USS(OF PRIN1--PRIN3)/ DIST_ORIG; 
+COS_1_4=USS(OF PRIN1--PRIN4)/ DIST_ORIG; 
+RUN;
+
+/* THE WORST REPRESENTED OBSERVATIONS*/
+PROC SORT DATA=VARS_STD_PRIN OUT=COSENI;
+BY COS_1_3-COS_1_4; 
+WHERE COS_1_3<0.2;
+RUN;
+
+/*
+PCs OUTLIERS ANALYSIS 
+*/
+
+/* Outliers based on Mahalanobis distances*/
+DATA DF_PCA;
+SET  DF_PCA;
+MAHALANOBIS=USS(OF PRIN1--PRIN20); 
+SIGN_CHI=1-PROBCHI(MAHALANOBIS,14);
+FLG_OUTLIER=(SIGN_CHI<0.05); 
+RUN;
+/* Outlier flag*/
+DATA DF_PCA;
+SET  DF_PCA;
+FLG_OUTLIER_2=(PRIN2<-2);
+FLG_OUTLIER_3=(PRIN3>2.5);
+FLG_OUTLIER_4=(PRIN4<-2 OR PRIN4>2.5);
+RUN;
+PROC FREQ DATA=DF_PCA;
+TABLE FLG_OUTLIER*FLG_OUTLIER_2*FLG_OUTLIER_3*FLG_OUTLIER_4 / LIST NOCUM;
+RUN;
+
+/*
+FACTOR ANALYSIS
+*/
+PROC FACTOR DATA=DF_WITHOUT_NULL 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=VARIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_WITHOUT_NULL 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2 item_10--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR15;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_12
+*/
+DATA DF_FACTOR;
+SET DF_WITHOUT_NULL;
+DROP item_21_12;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_9
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_20_9;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_8
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_20_8;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_5
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_15_5;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 19_2
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_19_2;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_8
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_16_8;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=15
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 14
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_14;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=14
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_6
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_21_6;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=14
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_15
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_21_15;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=13
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            PRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 12
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_12;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=13
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_1
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_20_1;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=13
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            PRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_3
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_20_3;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=13
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_4
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_21_4;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_7 NO SATURATION
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_7;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_11 NO SATURATION
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_11;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_9 NO SATURATION
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_9;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 17_2 SATURATION IN FACTOR 2 AND 3
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_17_2;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_5 SATURATION IN FACTOR 1 AND 3
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_20_5;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_7 SATURATION IN FACTOR 1 AND 4
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_21_7;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 19_3 SATURATION IN FACTOR 3 AND 5
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_19_3;
+KEEP item_2 item_10--item_22;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=12
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_22;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR12;
+WITH item_2 item_10--item_22;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 22 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_22;
+KEEP item_2 item_10--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=11
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR11;
+WITH item_2 item_10--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_3 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_15_3;
+KEEP item_2 item_10--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=11
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR11;
+WITH item_2 item_10--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_11 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_21_11;
+KEEP item_2 item_10--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=11
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR11;
+WITH item_2 item_10--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_5 SATURATION FACTOR 4 AND 7
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_16_5;
+KEEP item_2 item_10--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=10
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR10;
+WITH item_2 item_10--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_7 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_15_7;
+KEEP item_2 item_10--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=10
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR10;
+WITH item_2 item_10--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 10 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_10;
+KEEP item_2 item_11--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=10
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR10;
+WITH item_2 item_11--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 11 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_11;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_6 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_15_6;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_4 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_4;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_6 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_6;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_9 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_15_9;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_1 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_1;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=9
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR9;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_4 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_15_4;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=8
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR8;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 21_13 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_21_13;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=8
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR8;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 20_10 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_20_10;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=7
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR7;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 15_8 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_15_8;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=7
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            NOPRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR7;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 16_10 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP ITEM_16_10;
+KEEP item_2 item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=7
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            PRINT;
+VAR item_2--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR7;
+WITH item_2 item_15_1--item_21_16;
+RUN;
+
+/*
+FACTOR ANALYSIS DROPPING ITEM 2 NO SATURATION 
+*/
+DATA DF_FACTOR;
+SET DF_FACTOR;
+DROP item_2;
+KEEP item_15_1--item_21_16;
+RUN;
+
+PROC FACTOR DATA=DF_FACTOR 
+            OUT=FACTORS
+            N=7
+            PRIORS=SMC
+            ROTATE=QUARTIMAX
+			PLOTS=SCREE
+            REORDER ROUND FUZZ=0.35 RESIDUAL
+            PRINT;
+VAR item_15_1--item_21_16;
+RUN;
+/* Produzione file con correlazioni */
+PROC CORR DATA=FACTORS NOPRINT 
+		   OUT=FACTORS_CORR(WHERE=(_TYPE_='CORR'));
+VAR FACTOR1-FACTOR7;
+WITH item_15_1--item_21_16;
+RUN;

@@ -3,23 +3,24 @@
 %let biagio_path_pc = "C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES.xlsx";
 %let biagio_path_web = "/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx";
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES.xlsx";
+%let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES.xlsx";
 
 PROC IMPORT OUT=Wine_IT
-	DATAFILE=&biagio_path_web
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="IT";
 RUN;
 
 PROC IMPORT OUT=Wine_EN
-	DATAFILE=&biagio_path_web
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
 
 PROC IMPORT OUT=Naming_Convention
-	DATAFILE=&biagio_path_web
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
@@ -140,8 +141,6 @@ var4= SPARKLING_WINE;
 END;
 
 run;
-
-
 /*now we convert variables from character to numeric the italian version*/
 Data COL_CONVERTED_IT (drop = WHITE_WINE  ROSE_WINE SPARKLING_WINE SWEET_WINE );
 Set TRANSLATED_WINE_IT_sub;
