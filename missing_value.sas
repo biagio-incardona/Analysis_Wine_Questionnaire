@@ -1,8 +1,10 @@
 /*HANDELING MISSING VALUE*/
 /*Imputing Categorical values with mode */
-proc freq data=reordered_final_version order=ferq noprint;
-	TABLES  WINE_BOTTLES bottle_budget etna_buying buying_reason/NOPERCENT NOCUM 
-		out=WINE_BOTTLES_freq bottle_budget_freq etna_buying_freq buying_reason_freq; 
+proc freq data=finaldata order=ferq noprint;
+	TABLES  WINE_BOTTLES/NOPERCENT NOCUM out=WINE_BOTTLES_freq ; 
+	TABLES  bottle_budget/NOPERCENT NOCUM out=bottle_budget ; 
+	TABLES  etna_buying/NOPERCENT NOCUM out=etna_buying ; 
+	TABLES  buying_reason/NOPERCENT NOCUM out=buying_reason ; 
 run;
 proc sql noprint; 
 	select WINE_BOTTLES into :mode_bottles from WINE_BOTTLES_freq(obs=1) where WINE_BOTTLES is not null;
@@ -10,13 +12,12 @@ proc sql noprint;
 	select etna_buying into :mode_buying from etna_buying_freq(obs=1) where etna_buying is not null;
 	select buying_reason into :mode_reason from buying_reason_freq(obs=1) where buying_reason is not null;
 quit;
-%PUT &mtitle;
 data wine_categorical;
-	set reordered_final_version;
-	if missing(WINE_BOTTLES) then WINE_BOTTLES = "1-3 bottles";
-	if missing(bottle_budget) then bottle_budget = "5€ to less than 15€"; 
-	if missing(etna_buying) then etna_buying = "Yes"; 
-	if missing(buying_reason) then buying_reason = "home";  
+	set finaldata;
+	if missing(WINE_BOTTLES) then WINE_BOTTLES = "&mode_bottles";
+	if missing(bottle_budget) then bottle_budget = "&mode_budget"; 
+	if missing(etna_buying) then etna_buying = "&mode_buying"; 
+	if missing(buying_reason) then buying_reason = "&mode_reason";  
 run;
 /*Imputing Numeric values with mean value*/
 proc stdize data=wine_categorical out=wine_numeric  
