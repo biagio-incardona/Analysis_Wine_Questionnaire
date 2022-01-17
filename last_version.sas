@@ -3,23 +3,24 @@
 %let biagio_path_pc = "C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES.xlsx";
 %let biagio_path_web = "/home/u45129182/New Folder/WINE_SURVEY_RESPONSES.xlsx";
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES.xlsx";
+%let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES.xlsx";
 
 PROC IMPORT OUT=Wine_IT
-	DATAFILE=&gianluigi_path
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="IT";
 RUN;
 
 PROC IMPORT OUT=Wine_EN
-	DATAFILE=&gianluigi_path
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
 
 PROC IMPORT OUT=Naming_Convention
-	DATAFILE=&gianluigi_path
+	DATAFILE=&anna_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
@@ -45,7 +46,6 @@ proc sql noprint;
 select 'Naming_convention'n into :collist separated by ' ' 
 from Naming_Convention nc;
 quit;
-
 /*length of the list, how many variables*/
 %let len = %sysfunc(countw(&collist));
 
@@ -74,12 +74,12 @@ value $translate
 	 "7-9 bottiglie"  = "7-9 bottles"
 	 "10-12 bottiglie"  = "10-12 bottles"
 	 "12+ bottiglie"  = "12+ bottles"
-	 "Meno di 5€"  = "Less than 5€"
-	 "5€ - medo di 15€"  = "5€ to less than 15€"
-	 "15€ - meno di 30€"  = "15€ to less than 30€"
-	 "30€ - meno di 45€"  = "30€ to less than 45€"
-	 "45€ - meno di 60€"  = "45€ to less than 50€"
-	 "60€ o pi€"  = "60€ and more "
+	 "Meno di 5ï¿½"  = "Less than 5ï¿½"
+	 "5ï¿½ - medo di 15ï¿½"  = "5ï¿½ to less than 15ï¿½"
+	 "15ï¿½ - meno di 30ï¿½"  = "15ï¿½ to less than 30ï¿½"
+	 "30ï¿½ - meno di 45ï¿½"  = "30ï¿½ to less than 45ï¿½"
+	 "45ï¿½ - meno di 60ï¿½"  = "45ï¿½ to less than 50ï¿½"
+	 "60ï¿½ o piï¿½"  = "60ï¿½ and more "
 	 "Non lo so"  = "I don't know "
 	 "Donna"  = "Female "
 	 "Uomo"  = "Male "
@@ -164,18 +164,13 @@ var4= SWEET_WINE;
 END;
 
 run;
-
-
-
 /*NOW WE CAN APPEND THE 2 DATASETS */
-
 /*set all char variables to same length (don't doing this may cause truncation in the values)*/
-proc sql;
+proc sql noprint;
      select name into :vname separated by ' '
      from dictionary.columns
      where MEMNAME='COL_CONVERTED_EN'  AND type='char';
 quit;
-
 data COL_MODIFIED_EN;
      length &vname $ 1000; /*even though this is a waste of space, with less than 300 rows this is not a big deal*/
      set COL_CONVERTED_EN;
@@ -188,7 +183,6 @@ RUN;
 data APPENDED_DATASET;  
 set COL_MODIFIED_IT COL_MODIFIED_EN;
 run;
-
 data NAMING_CONVENTION (drop = i reasonn1-reasonn4 reasonal1-reasonal4 reasona1-reasona4);
 set APPENDED_DATASET;
 	array choices[4] $ 6 reasonn1-reasonn4 ("home" "gift" "party" "taste" );
@@ -206,7 +200,6 @@ set APPENDED_DATASET;
 		BUYING_REASON = tranwrd(BUYING_REASON, strip(choices_italian[i]), strip(choices[i]));
 	end;
 run;
-
 /*split the reasons in the dummy variables*/
 data DUMMIFIED_WINE_EN (DROP = j choice1-choice4);
 	set NAMING_CONVENTION;
@@ -217,14 +210,10 @@ data DUMMIFIED_WINE_EN (DROP = j choice1-choice4);
 		else choices[j] = 0;
 	end;
 run;
-
-
 /* i reordered the file, the last 3 columns still VERSION ROWNUM AND I i maybe we can delete if we dont use */
 /* maybe also the buying reason can be useless and we could delete*/
 /*the REASON_TRY is it to modify? or is it referred to the columns OTHER ?*/
 /*proc print data=finalversion; run;*/
-
-
 data reordered_final_version;
 retain WINE_PREFERENCE BEER_PREFERENCE SOFT_PREFERENCE COCKTAIL_PREFERENCE WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE WINE_TASTING WINERY_VISIT
 WINE_COURSE WINE_KNOWLEDGE BUYING_EXPERIENCE WINE_BOTTLES SUPERMARKET WINE_SHOP ONLINE_SHOP GRAPE_ORIGIN GRAPE_VARIETY
@@ -234,17 +223,9 @@ ETNA_DOC ETNA_BUYING ETNA_PREFERENCE ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPEN
 GENDER AGE EDUCATION LOCATION JOB;
 set DUMMIFIED_WINE_EN;
 run;
-
-/*replace null values with the median*/
-
-proc stdize data = reordered_final_version 
-	out=reordered_final_version_stdz 
-	reponly method=median;
-run;
-
 /*tranform categorical variable in numerical */
-Data new_reordered_final_version_stdz (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING);
-Set reordered_final_version_stdz;
+Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING);
+Set reordered_final_version;
 Array old_var(4) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC  ;
 Array new_var(4) var1-var4;
 Do i = 1 to 4;
@@ -266,6 +247,7 @@ var3 = WINE_COURSE
 var4 = ETNA_DOC
 var15 = ETNA_BUYING;
 run;
+
 /*REORDERING COLUMNS*/
 
 data finaldata (drop = i);
@@ -275,7 +257,7 @@ BUDGET_FRIENDLY BRAND_AWARNESS VINTAGE LABEL_INFO PACKAGING PROMOTION BOTTLE_BUD
 /*BUYING_REASON*/ PARTY GIFT HOME TASTE
 ETNA_DOC ETNA_BUYING ETNA_PREFERENCE ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPENSIVE ETNA_QUALITY ETNA_RECOMMENDATION 
 GENDER AGE EDUCATION LOCATION JOB;
-set new_reordered_final_version_stdz;
+set new_reordered_final_version;
 run;
 
 
