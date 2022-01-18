@@ -2,9 +2,9 @@
 /*Imputing Categorical values with mode */
 proc freq data=finaldata order=ferq noprint;
 	TABLES  WINE_BOTTLES/NOPERCENT NOCUM out=WINE_BOTTLES_freq ; 
-	TABLES  bottle_budget/NOPERCENT NOCUM out=bottle_budget ; 
-	TABLES  etna_buying/NOPERCENT NOCUM out=etna_buying ; 
-	TABLES  buying_reason/NOPERCENT NOCUM out=buying_reason ; 
+	TABLES  bottle_budget/NOPERCENT NOCUM out=bottle_budget_freq ; 
+	TABLES  etna_buying/NOPERCENT NOCUM out=etna_buying_freq ; 
+	TABLES  buying_reason/NOPERCENT NOCUM out=buying_reason_freq ; 
 run;
 proc sql noprint; 
 	select WINE_BOTTLES into :mode_bottles from WINE_BOTTLES_freq(obs=1) where WINE_BOTTLES is not null;
