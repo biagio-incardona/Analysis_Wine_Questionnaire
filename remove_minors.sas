@@ -2,7 +2,7 @@
 /*remove minors if any*/
 
 DATA No_Minors;
-SET Wine_Age_Cat;
+SET data_Age_Cat;
 IF Age_Class = "minor" THEN
 	DELETE;
 RUN;
