@@ -1,8 +1,8 @@
-/*RUN AFTER LOAD_AND_RENAME*/
+/*RUN AFTER finaldata*/
 /*CONVERT THE AGE VARIABLE INTO A CATEGORICAL VARIABLE WITH 5 CLASSES*/
 
-DATA Wine_Age_Cat;
-SET Wine_Renamed;
+DATA data_Age_Cat;
+SET finaldata;
 IF age >= 0 AND age <= 17 THEN
 	Age_Class = "minor";
 ELSE IF age >= 18 AND age <= 24 THEN
