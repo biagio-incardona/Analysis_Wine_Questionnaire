@@ -4,6 +4,7 @@
 %let biagio_path_web = "/home/u45129182/new/WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES_18012022.xlsx";
+%let thamires_path="C:\Users\Thamires\Desktop\ADQ\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
 %let current_path = &biagio_path_web;
