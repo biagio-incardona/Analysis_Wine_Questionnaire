@@ -5,6 +5,7 @@
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
+/*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
 %let current_path = &biagio_path_web;
 
 PROC IMPORT OUT=Wine_IT
@@ -78,12 +79,12 @@ value $translate
 	 "7-9 bottiglie"  = "7-9 bottles"
 	 "10-12 bottiglie"  = "10-12 bottles"
 	 "12+ bottiglie"  = "12+ bottles"
-	 "Meno di 5€"  = "Less than 5€"
-	 "5€ - medo di 15€"  = "5€ to less than 15€"
-	 "15€ - meno di 30€"  = "15€ to less than 30€"
-	 "30€ - meno di 45€"  = "30€ to less than 45€"
-	 "45€ - meno di 60€"  = "45€ to less than 50€"
-	 "60€ o pi€"  = "60€ and more "
+	 "Meno di 5â‚¬"  = "Less than 5â‚¬"
+	 "5â‚¬ - medo di 15â‚¬"  = "5â‚¬ to less than 15â‚¬"
+	 "15â‚¬ - meno di 30â‚¬"  = "15â‚¬ to less than 30â‚¬"
+	 "30â‚¬ - meno di 45â‚¬"  = "30â‚¬ to less than 45â‚¬"
+	 "45â‚¬ - meno di 60â‚¬"  = "45â‚¬ to less than 50â‚¬"
+	 "60â‚¬ o piâ‚¬"  = "60â‚¬ and more "
 	 "Non lo so"  = "I don't know "
 	 "Donna"  = "Female "
 	 "Uomo"  = "Male "
@@ -109,7 +110,7 @@ run;
         %let j = %scan(&collist,&i);
         data tmp_Wine_IT;
         	set tmp_Wine_IT;
-			format &j translate.;
+			&j = put(&j, translate.);
         run;
     %end;
 %mend;
@@ -247,9 +248,9 @@ if WINE_KNOWLEDGE = "None" then var6 = 1;else if WINE_KNOWLEDGE = "Basic" then v
 		else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2; 
 		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; */
 		else var6=4;
-if BOTTLE_BUDGET = 'Less than 5€' then var7 = 1; else if BOTTLE_BUDGET = '5€ to less than 15€' then var7= 2; 
-		else if BOTTLE_BUDGET= '15€ to less than 30€' then var7=3; else if BOTTLE_BUDGET= '30€ to less than 45€' then var7=4; 
-		else if BOTTLE_BUDGET= '45€ to less than 60€' then var7=5; else if BOTTLE_BUDGET= '60€ and more' then var7=6;  else var7= 0;
+if BOTTLE_BUDGET = 'Less than 5â‚¬' then var7 = 1; else if BOTTLE_BUDGET = '5â‚¬ to less than 15â‚¬' then var7= 2; 
+		else if BOTTLE_BUDGET= '15â‚¬ to less than 30â‚¬' then var7=3; else if BOTTLE_BUDGET= '30â‚¬ to less than 45â‚¬' then var7=4; 
+		else if BOTTLE_BUDGET= '45â‚¬ to less than 60â‚¬' then var7=5; else if BOTTLE_BUDGET= '60â‚¬ and more' then var7=6;  else var7= 0;
 		
 if BUYING_EXPERIENCE = 'Never' then var8 = 1; else if BUYING_EXPERIENCE = '1-2 times per month' then var8= 2; 
 		else if BUYING_EXPERIENCE = '3-4 times per month' then var8= 3; else if BUYING_EXPERIENCE = '5-6 times per month' then var8= 4;
