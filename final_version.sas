@@ -226,31 +226,42 @@ ETNA_DOC ETNA_BUYING ETNA_PREFERENCE ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPEN
 GENDER AGE EDUCATION LOCATION JOB;
 set DUMMIFIED_WINE_EN;
 run;
-
+proc print data= reordered_final_version;run;
 /*tranform categorical variable in numerical */
-Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING);
+Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE);
 Set reordered_final_version;
-Array old_var(4) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC  ;
-Array new_var(4) var1-var4;
+Array old_var(6) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE ;
+Array new_var(6) var1-var6;
 Do i = 1 to 4;
 	if old_var(i) = 'No' then new_var(i) = 0; else new_var(i) = 1;
 End;
-Array old_var1(1) $    ETNA_BUYING  ;
-Array new_var1(1) var15;
+/*Do i= 5 to 6;
+if old_var(i) = 'Yes' then new_var(i) = 1; else if old_var(i) = 'No' then new_var(i) = -1; else if old_var(i)= 'Si' then new_var(i)= 1;else new_var(i)= 0;
+end;*/
+if ETNA_BUYING = 'Yes' then var5 = 1; else if ETNA_BUYING = 'No' then var5 = -1;else if ETNA_BUYING='Si' then var5=1; else var5 = 0;
+if WINE_KNOWLEDGE = "None" then var6 = 1;else if WINE_KNOWLEDGE = "Basic" then var6 = 2; else if WINE_KNOWLEDGE = "Medium" then var6 = 3;
+		else if WINE_KNOWLEDGE= "Basic (amateur knowledge level)" then var6= 2; 
+		else if WINE_KNOWLEDGE = "Medium (semi-professional knowledge level)" then var6=3; 
+		else if WINE_KNOWLEDGE= 'Nessuna' then var6= 1; else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2;  
+		else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2; 
+		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; 
+		else var6=4;
 
-if ETNA_BUYING = "Yes" then var15 = 1; else if ETNA_BUYING = "No" then var15 = -1; else var15 = 0;
+		
+
 
 label var1 = 'WINE_TASTING'
 var2 = 'WINERY_VISIT'
 var3 = 'WINE_COURSE'
 var4 = 'ETNA_DOC'
-var15 = 'ETNA_BUYING';
+var5 = 'ETNA_BUYING';
 rename var1 = WINE_TASTING
 var2 = WINERY_VISIT
 var3 = WINE_COURSE
 var4 = ETNA_DOC
-var15 = ETNA_BUYING;
+var5 = ETNA_BUYING;
 run;
+proc print data= new_reordered_final_version;run;
 
 /*REORDERING COLUMNS*/
 
@@ -348,4 +359,29 @@ retain DateTime;
 set dataset_drop;
 run;
 
-/*PROC print data= dataset; run;
+PROC print data= dataset; run;
+
+/* CLASSICAL TEST THEORY
+ data are suitable for Factor Analysis?*/
+/* firtly i checked on the question 17 and 18 the consistency among variables*/
+
+/* Croncbach coefficient */
+proc corr data=dataset alpha nomiss;
+var ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPENSIVE ETNA_QUALITY ETNA_RECOMMENDATION;
+run;
+
+/*Pearson Correlation matrix*/
+/* Output file with correlations */
+PROC CORR DATA=dataset  
+		   OUT=CORR(WHERE=(_TYPE_='CORR'));
+var WINE_PREFERENCE--SWEET_WINE SUPERMARKET--PROMOTION BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
+
+RUN;
+/* scree plot for factor */
+PROC FACTOR DATA=dataset 
+PRIORS=SMC 
+outstat=communal_ndefault(WHERE=(_TYPE_="COMMUNAL")) 
+PLOTS=SCREE(UNPACK) 
+SCREE; 
+var WINE_PREFERENCE--SWEET_WINE SUPERMARKET--PROMOTION BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
+RUN;
