@@ -228,38 +228,56 @@ set DUMMIFIED_WINE_EN;
 run;
 proc print data= reordered_final_version;run;
 /*tranform categorical variable in numerical */
-Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE);
+Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE BOTTLE_BUDGET
+									BUYING_EXPERIENCE WINE_BOTTLES);
 Set reordered_final_version;
-Array old_var(6) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE ;
-Array new_var(6) var1-var6;
+Array old_var(9) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE BOTTLE_BUDGET BUYING_EXPERIENCE WINE_BOTTLES ;
+Array new_var(9) var1-var9;
 Do i = 1 to 4;
 	if old_var(i) = 'No' then new_var(i) = 0; else new_var(i) = 1;
 End;
 /*Do i= 5 to 6;
 if old_var(i) = 'Yes' then new_var(i) = 1; else if old_var(i) = 'No' then new_var(i) = -1; else if old_var(i)= 'Si' then new_var(i)= 1;else new_var(i)= 0;
 end;*/
-if ETNA_BUYING = 'Yes' then var5 = 1; else if ETNA_BUYING = 'No' then var5 = -1;else if ETNA_BUYING='Si' then var5=1; else var5 = 0;
+if ETNA_BUYING = 'Yes' then var5 = 1; else if ETNA_BUYING = 'No' then var5 = -1;/*else if ETNA_BUYING='Si' then var5=1; */else var5 = 0;
 if WINE_KNOWLEDGE = "None" then var6 = 1;else if WINE_KNOWLEDGE = "Basic" then var6 = 2; else if WINE_KNOWLEDGE = "Medium" then var6 = 3;
 		else if WINE_KNOWLEDGE= "Basic (amateur knowledge level)" then var6= 2; 
 		else if WINE_KNOWLEDGE = "Medium (semi-professional knowledge level)" then var6=3; 
-		else if WINE_KNOWLEDGE= 'Nessuna' then var6= 1; else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2;  
+		/*else if WINE_KNOWLEDGE= 'Nessuna' then var6= 1; else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2;  
 		else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2; 
-		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; 
+		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; */
 		else var6=4;
-
+if BOTTLE_BUDGET = 'Less than 5€' then var7 = 1; else if BOTTLE_BUDGET = '5€ to less than 15€' then var7= 2; 
+		else if BOTTLE_BUDGET= '15€ to less than 30€' then var7=3; else if BOTTLE_BUDGET= '30€ to less than 45€' then var7=4; 
+		else if BOTTLE_BUDGET= '45€ to less than 60€' then var7=5; else if BOTTLE_BUDGET= '60€ and more' then var7=6;  else var7= 0;
 		
+if BUYING_EXPERIENCE = 'Never' then var8 = 1; else if BUYING_EXPERIENCE = '1-2 times per month' then var8= 2; 
+		else if BUYING_EXPERIENCE = '3-4 times per month' then var8= 3; else if BUYING_EXPERIENCE = '5-6 times per month' then var8= 4;
+		else if BUYING_EXPERIENCE = '7+ times per month' then var8= 5; else var8= 0;
 
+if WINE_BOTTLES = 'Less than 1 bottle' then var9= 1; else if WINE_BOTTLES= '1-3 bottles' then var9=2; else if WINE_BOTTLES= '4-6 bottles' then var9=3;
+				else if WINE_BOTTLES= '7-9 bottles' then var9=4; else if WINE_BOTTLES= '10-12 bottles' then var9=5;
+				else if WINE_BOTTLES= '12+ bottles' then var9=6; else var9= 0;
 
 label var1 = 'WINE_TASTING'
 var2 = 'WINERY_VISIT'
 var3 = 'WINE_COURSE'
 var4 = 'ETNA_DOC'
-var5 = 'ETNA_BUYING';
+var5 = 'ETNA_BUYING'
+var6 = 'WINE_KNOWLEDGE'
+var7 = 'BOTTLE_BUDGET'
+var8 = 'BUYING_EXPERIENCE'
+var9 = 'WINE_BOTTLES';
 rename var1 = WINE_TASTING
 var2 = WINERY_VISIT
 var3 = WINE_COURSE
 var4 = ETNA_DOC
-var5 = ETNA_BUYING;
+var5 = ETNA_BUYING
+var6 = WINE_KNOWLEDGE
+var7 = BOTTLE_BUDGET
+var8 = BUYING_EXPERIENCE
+var9 = WINE_BOTTLES;
+
 run;
 proc print data= new_reordered_final_version;run;
 
@@ -361,27 +379,3 @@ run;
 
 PROC print data= dataset; run;
 
-/* CLASSICAL TEST THEORY
- data are suitable for Factor Analysis?*/
-/* firtly i checked on the question 17 and 18 the consistency among variables*/
-
-/* Croncbach coefficient */
-proc corr data=dataset alpha nomiss;
-var ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPENSIVE ETNA_QUALITY ETNA_RECOMMENDATION;
-run;
-
-/*Pearson Correlation matrix*/
-/* Output file with correlations */
-PROC CORR DATA=dataset  
-		   OUT=CORR(WHERE=(_TYPE_='CORR'));
-var WINE_PREFERENCE--SWEET_WINE SUPERMARKET--PROMOTION BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
-
-RUN;
-/* scree plot for factor */
-PROC FACTOR DATA=dataset 
-PRIORS=SMC 
-outstat=communal_ndefault(WHERE=(_TYPE_="COMMUNAL")) 
-PLOTS=SCREE(UNPACK) 
-SCREE; 
-var WINE_PREFERENCE--SWEET_WINE SUPERMARKET--PROMOTION BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
-RUN;
