@@ -138,7 +138,7 @@ var4= SPARKLING_WINE;
 
 
 END;
-
+OPTIONS MISSING = 0;
 run;
 
 
@@ -164,7 +164,7 @@ var5= SWEET_WINE;
 
 
 END;
-
+OPTIONS MISSING = 0;
 run;
 /*NOW WE CAN APPEND THE 2 DATASETS */
 /*set all char variables to same length (don't doing this may cause truncation in the values)*/
