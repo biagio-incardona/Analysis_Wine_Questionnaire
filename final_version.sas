@@ -11,7 +11,7 @@
 >>>>>>> 08a4200aac201de9a7df00986a68e6fd3dcbbd45
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
-%let current_path = &anna_path;
+%let current_path = &thamires_path;
 
 PROC IMPORT OUT=Wine_IT
 	DATAFILE=&current_path
@@ -363,3 +363,27 @@ set dataset_drop;
 run;
 
 PROC print data= dataset; run;
+
+/*PREPROCESSING FOR ANALYSIS OF CORRESPONDENCE*/
+
+
+/*transforming the variable ETNA_PREFERENCE into categorical*/
+
+DATA data_correspondence;
+SET dataset;
+IF ETNA_PREFERENCE = 1 THEN
+	etnapreference = "Very_Low";
+ELSE IF ETNA_PREFERENCE = 2 THEN
+	etnapreference ="Low";
+ELSE IF ETNA_PREFERENCE = 3  THEN
+	etnapreference = "High";
+ELSE 
+	etnapreference = "Very_High";
+RUN;
+
+
+
+
+
+
+
