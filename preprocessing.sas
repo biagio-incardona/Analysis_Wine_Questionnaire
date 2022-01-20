@@ -125,7 +125,7 @@ Array old_var(4) $ WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE ;
 Array new_var(4) var1-var4;
 Do i = 1 to 4;
 		new_var(i) = input(old_var(i), best.); 
-
+		if new_var(i)=. then new_var(i)=0;
 label var1= 'WHITE_WINE'
 var2= 'RED_WINE'
 var3= 'SWEET_WINE'
@@ -149,7 +149,7 @@ Array old_var(5) $ WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE ;
 Array new_var(5) var1-var5;
 Do i = 1 to 5;
 		new_var(i) = input(old_var(i), best.); 
-
+		if new_var(i)=. then new_var(i)=0;
 label var1= 'WHITE_WINE'
 var2= 'ROSE_WINE'
 var3= 'RED_WINE'
@@ -164,7 +164,7 @@ var5= SWEET_WINE;
 
 
 END;
-OPTIONS MISSING = 0;
+
 run;
 /*NOW WE CAN APPEND THE 2 DATASETS */
 /*set all char variables to same length (don't doing this may cause truncation in the values)*/
