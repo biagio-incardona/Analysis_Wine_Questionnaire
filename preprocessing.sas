@@ -3,12 +3,8 @@
 %let biagio_path_pc = "C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let biagio_path_web = "/home/u45129182/new/WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES_18012022.xlsx";
-<<<<<<< HEAD
 %let anna_path="C:\Users\Annabelle\Desktop\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
-=======
-%let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let thamires_path="C:\Users\Thamires\Desktop\ADQ\WINE_SURVEY_RESPONSES_18012022.xlsx";
->>>>>>> 08a4200aac201de9a7df00986a68e6fd3dcbbd45
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
 %let current_path = &thamires_path;
