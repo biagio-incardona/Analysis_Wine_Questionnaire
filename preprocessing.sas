@@ -360,6 +360,7 @@ run;
 
 PROC print data= dataset; run;
 
+
 /*PREPROCESSING FOR ANALYSIS OF CORRESPONDENCE*/
 
 
@@ -368,18 +369,23 @@ PROC print data= dataset; run;
 DATA data_correspondence;
 SET dataset;
 IF ETNA_PREFERENCE = 1 THEN
-	etnapreference = "Very_Low";
+	etnapreference = "Very_Low ";
 ELSE IF ETNA_PREFERENCE = 2 THEN
 	etnapreference ="Low";
 ELSE IF ETNA_PREFERENCE = 3  THEN
 	etnapreference = "High";
-ELSE 
+ELSE
 	etnapreference = "Very_High";
-RUN;
 
-
-
-
-
-
+IF WINE_KNOWLEDGE = 1 THEN 
+	wineknowledge = "None   ";
+ELSE IF WINE_KNOWLEDGE = 2 THEN
+	wineknowledge = "Basic";
+ELSE IF WINE_KNOWLEDGE = 3 THEN
+	wineknowledge = "Medium";
+ELSE 
+	wineknowledge = "High";
+	RUN;
+	
+	 
 
