@@ -3,29 +3,30 @@
 %let biagio_path_pc = "C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let biagio_path_web = "/home/u45129182/new/WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let gianluigi_path = "C:\Users\utente\Desktop\Analysis of Questionnaire Data\WINE_SURVEY_RESPONSES_18012022.xlsx";
+<<<<<<< HEAD
+%let anna_path="C:\Users\Annabelle\Desktop\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
+=======
 %let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES_18012022.xlsx";
+%let thamires_path="C:\Users\Thamires\Desktop\ADQ\WINE_SURVEY_RESPONSES_18012022.xlsx";
+>>>>>>> 08a4200aac201de9a7df00986a68e6fd3dcbbd45
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
-%let current_path = &biagio_path_web;
+%let current_path = &anna_path;
 
 PROC IMPORT OUT=Wine_IT
-	DATAFILE=&gianluigi_path
+	DATAFILE=&current_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="IT";
 RUN;
-
-
 PROC IMPORT OUT=Wine_EN
-	DATAFILE=&gianluigi_path
+	DATAFILE=&current_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
-proc print data=Wine_EN;run;
-
 PROC IMPORT OUT=Naming_Convention
-	DATAFILE=&gianluigi_path
+	DATAFILE=&current_path
 	DBMS=XLSX REPLACE;
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
@@ -42,7 +43,6 @@ DATA WINE_EN_sub;
 set Wine_EN;
 if _N_ <= 51 then output;
 run;
-
 
 /*TRANSLATE ITALIAN DATASET TO ENGLISH*/
 
@@ -115,7 +115,6 @@ run;
     %end;
 %mend;
 %translate;
-
 
 DATA Translated_Wine_IT_sub;
 	SET tmp_Wine_IT;
@@ -297,33 +296,20 @@ run;
 /*HANDELING MISSING VALUE*/
 /*Imputing Categorical values with mode */
 proc freq data=finaldata order=freq noprint;
-	TABLES  WINE_BOTTLES/NOPERCENT NOCUM out=WINE_BOTTLES_freq ; 
-	TABLES  bottle_budget/NOPERCENT NOCUM out=bottle_budget_freq ; 
-	TABLES  etna_buying/NOPERCENT NOCUM out=etna_buying_freq ; 
 	TABLES  buying_reason/NOPERCENT NOCUM out=buying_reason_freq ; 
 run;
 proc sql noprint; 
-	select WINE_BOTTLES into :mode_bottles from WINE_BOTTLES_freq(obs=1) where WINE_BOTTLES is not null;
-	select bottle_budget into :mode_budget from bottle_budget_freq(obs=1) where bottle_budget is not null;
-	select etna_buying into :mode_buying from etna_buying_freq(obs=1) where etna_buying is not null;
 	select buying_reason into :mode_reason from buying_reason_freq(obs=1) where buying_reason is not null;
 quit;
 data wine_categorical;
 	set finaldata;
-	if missing(WINE_BOTTLES) then WINE_BOTTLES = "&mode_bottles";
-	if missing(bottle_budget) then bottle_budget = "&mode_budget"; 
-	if missing(etna_buying) then etna_buying = "&mode_buying"; 
 	if missing(buying_reason) then buying_reason = "&mode_reason";  
 run;
-
 /*Imputing Numeric values with mean value*/
 proc stdize data=wine_categorical out=wine_numeric  
    REPONLY
-   method= MEDIAN;          /* or MEDIAN*/
-   var  WINE_PREFERENCE--SWEET_WINE  
-		SUPERMARKET--PROMOTION  
-		BUYING_FREQUENCY 
-		ETNA_PREFERENCE--ETNA_RECOMMENDATION ; 
+   method= MEDIAN;
+   var  WHITE_WINE--ETNA_RECOMMENDATION; 
 run;
 proc print data= wine_numeric; run;
 /* Round Imputed Values*/
@@ -335,8 +321,6 @@ data wine_imputed;
 	end;
 	drop i;
 run;
-
-
 
 /*CONVERT THE AGE VARIABLE INTO A CATEGORICAL VARIABLE WITH 5 CLASSES*/
 
@@ -379,4 +363,3 @@ set dataset_drop;
 run;
 
 PROC print data= dataset; run;
-

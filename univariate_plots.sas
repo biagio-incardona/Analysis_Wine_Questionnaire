@@ -6,7 +6,7 @@
 	PROC FREQ DATA=&var_data;
 	TABLES &var_name;
 	run;
-%mend
+%mend;
 
 /*MACRO BARPLOT*/
 %macro cat_barplot(var_data, var_name, var_title);
@@ -15,13 +15,13 @@
 	HBAR &var_name / stat=percent datalabel;
 	RUN;
 	TITLE;
-%mend
+%mend;
 
 /*MACRO*/
 %macro cat_univar_plots(var_data, var_name, var_title);
 	%cat_summary(&var_data, &var_name);
 	%cat_barplot(&var_data, &var_name, &var_title);
-%mend
+%mend;
 
 %let data = dataset;
 
