@@ -6,10 +6,10 @@ ods graphics on;
 TITLE "Is there a connection between gender and Etna Wine Preference?";
 
 PROC SGPLOT DATA=data_correspondence;
-VBAR etnapreference / group=online_lessons transparency=0.5;
+VBAR etnapreference / group=gender transparency=0.5;
 RUN;
 
-PROC FREQ DATA=df_correspondence; 
+PROC FREQ DATA=data_correspondence; 
 TABLES etnapreference*GENDER /  nopercent norow nocol
 			OUT=CONTEGGIO_FREQ
  			CHISQ
@@ -34,10 +34,10 @@ TITLE "Is there a connection between age and Etna Wine Preference?";
 
 
 PROC SGPLOT DATA=data_correspondence;
-VBAR Age_Class / group=online_lessons transparency=0.5;
+VBAR etnapreference / group=Age_Class transparency=0.5;
 RUN;
 
-PROC FREQ DATA=df_correspondence; 
+PROC FREQ DATA=data_correspondence; 
 TABLES Age_Class*etnapreference /  nopercent norow nocol
 			OUT=CONTEGGIO_FREQ
  			CHISQ
