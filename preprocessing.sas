@@ -7,7 +7,7 @@
 %let thamires_path="C:\Users\Thamires\Desktop\ADQ\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
-%let current_path = &thamires_path;
+%let current_path = &BIAGIO_PATH_WEB;
 
 PROC IMPORT OUT=Wine_IT
 	DATAFILE=&current_path
@@ -55,67 +55,64 @@ data tmp_Wine_IT;
 	set Wine_IT_sub;
 run;
 
-/*defined a sort of dictionary to translate, it is the fastest structure i was able to find*/
-proc format;
-value $translate
-	"Mai assaggiato" = "Never tasted"
- 	"Si"  = "Yes"
- 	"Nessuna"  = "None"
-	 "Di base (conoscenza amatoriale)"  = "Basic (amateur knowledge level)"
-	 "Media (conoscenza semi-professionale)"  = "Medium (semi-professional knowledge level)"
-	 "Avanzata (conoscenza professionale)"  = "High (professional knowledge level)"
-	 "Mai"  = "Never"
-	 "1-2 volte al mese"  = "1-2 times per month"
-	 "3-4 volte al mese"  = "3-4 times per month"
-	 "5-6 volte al mese"  = "5-6 times per month"
-	 "7+ volte al mese"  = "7+ times per month"
-	 "Meno di una bottiglia"  = "Less than 1 bottle"
-	 "1-3 bottiglie"  = "1-3 bottles"
-	 "4-6 bottiglie"  = "4-6 bottles"
-	 "7-9 bottiglie"  = "7-9 bottles"
-	 "10-12 bottiglie"  = "10-12 bottles"
-	 "12+ bottiglie"  = "12+ bottles"
-	 "Meno di 5€"  = "Less than 5€"
-	 "5€ - medo di 15€"  = "5€ to less than 15€"
-	 "15€ - meno di 30€"  = "15€ to less than 30€"
-	 "30€ - meno di 45€"  = "30€ to less than 45€"
-	 "45€ - meno di 60€"  = "45€ to less than 50€"
-	 "60€ o pi€"  = "60€ and more "
-	 "Non lo so"  = "I don't know "
-	 "Donna"  = "Female "
-	 "Uomo"  = "Male "
-	 "Preferisco non rispondere"  = "Prefer not to say "
-	 "Scuola elementare o media inferiore"  = "Primary and medium school "
-	 "Scuola media superiore (liceo o istituto tecnico)"  = "High school "
-	 "Titolo universitario"  = "University degree "
-	 "Sicilia"  = "Sicily "
-	 "Altra regione in Italia (no Sicilia)"  = "Other region in Italy (no Sicily) "
-	 "Paese EU (no Italia)"  = "Foreign EU country (no Italy) "
-	 "Paese extra EU"  = "Foreign not EU country (no Italy) "
-	 "Studente"  = "Student "
-	 "Impiegato"  = "Employee "
-	 "Libero professionista"  = "Freelancer "
-	 "Disoccupato"  = "Unemployed "
-	 "Pensionato"  = "Retired "
-	 "Casalinga/o"  = "Housewife/Housemen ";
-run;
+/*EXTRACT CHARVARIABLES*/
+proc sql;
+     select name into :vname separated by ' '
+     from dictionary.columns
+     where MEMNAME='WINE_IT'  AND type='char';
+quit;
 
-/*macro to translate the italian responses*/
-%macro translate;
-    %do i = 1 %to &len;
-        %let j = %scan(&collist,&i);
-        data tmp_Wine_IT;
-        	set tmp_Wine_IT;
-			&j = put(&j, translate.);
-        run;
-    %end;
-%mend;
-%translate;
-
-DATA Translated_Wine_IT_sub;
-	SET tmp_Wine_IT;
+/*TRANSLATE*/
+DATA TRANSLATED_WINE_IT_SUB;
+LENGTH &VNAME $200;
+FORMAT &VNAME $CHAR200.;
+INFORMAT &VNAME $CHAR200.;
+SET TMP_WINE_IT;
+	array vars [*] _character_;
+	DO I = 1 TO DIM(VARS);
+		IF VARS[I] = "Mai assaggiato" THEN VARS[I] = "Never tasted";
+		ELSE IF VARS[I] = "Si" THEN VARS[I] = "Yes";
+		ELSE IF VARS[I] = "Nessuna" THEN VARS[I] = "None";
+		ELSE IF VARS[I] = "Di base (conoscenza amatoriale)" THEN VARS[I] = "Basic (amateur knowledge level)";
+		ELSE IF VARS[I] = "Media (conoscenza semi-professionale)" THEN VARS[I] = "Medium (semi-professional knowledge level)";
+		ELSE IF VARS[I] = "Avanzata (conoscenza professionale)" THEN VARS[I] = "High (professional knowledge level)";
+		ELSE IF VARS[I] = "Mai" THEN VARS[I] = "Never";
+		ELSE IF VARS[I] = "1-2 volte al mese" THEN VARS[I] = "1-2 times per month";
+		ELSE IF VARS[I] = "3-4 volte al mese" THEN VARS[I] = "3-4 times per month";
+		ELSE IF VARS[I] = "5-6 volte al mese" THEN VARS[I] = "5-6 times per month";
+		ELSE IF VARS[I] = "7+ volte al mese" THEN VARS[I] = "7+ times per month";
+		ELSE IF VARS[I] = "Meno di una bottiglia" THEN VARS[I] = "Less than 1 bottle";
+		ELSE IF VARS[I] = "1-3 bottiglie" THEN VARS[I] = "1-3 bottles";
+		ELSE IF VARS[I] = "4-6 bottiglie" THEN VARS[I] = "4-6 bottles";
+		ELSE IF VARS[I] = "7-9 bottiglie" THEN VARS[I] = "7-9 bottles";
+		ELSE IF VARS[I] = "10-12 bottiglie" THEN VARS[I] = "10-12 bottles";
+		ELSE IF VARS[I] = "12+ bottiglie" THEN VARS[I] = "12+ bottles";
+		ELSE IF VARS[I] = "Meno di 5€" THEN VARS[I] = "Less than 5€";
+		ELSE IF VARS[I] = "5€ - medo di 15€" THEN VARS[I] = "5€ to less than 15€";
+		ELSE IF VARS[I] = "15€ - meno di 30€" THEN VARS[I] = "15€ to less than 30€";
+		ELSE IF VARS[I] = "30€ - meno di 45€" THEN VARS[I] = "30€ to less than 45€";
+		ELSE IF VARS[I] = "45€ - meno di 60€" THEN VARS[I] = "45€ to less than 50€";
+		ELSE IF VARS[I] = "60€ o più" THEN VARS[I] = "60€ and more";
+		ELSE IF VARS[I] = "Non lo so" THEN VARS[I] = "I don't know";
+		ELSE IF VARS[I] = "Donna" THEN VARS[I] = "Female";
+		ELSE IF VARS[I] = "Uomo" THEN VARS[I] = "Male";
+		ELSE IF VARS[I] = "Preferisco non rispondere" THEN VARS[I] = "Prefer not to say";
+		ELSE IF VARS[I] = "Scuola elementare o media inferiore" THEN VARS[I] = "Primary and medium school";
+		ELSE IF VARS[I] = "Scuola media superiore (liceo o istituto tecnico)" THEN VARS[I] = "High school";
+		ELSE IF VARS[I] = "Titolo universitario" THEN VARS[I] = "University degree";
+		ELSE IF VARS[I] = "Sicilia" THEN VARS[I] = "Sicily";
+		ELSE IF VARS[I] = "Altra regione in Italia (no Sicilia)" THEN VARS[I] = "Other region in Italy (no Sicily)";
+		ELSE IF VARS[I] = "Paese EU (no Italia)" THEN VARS[I] = "Foreign EU country (no Italy)";
+		ELSE IF VARS[I] = "Paese extra EU" THEN VARS[I] = "Foreign not EU country (no Italy)";
+		ELSE IF VARS[I] = "Studente" THEN VARS[I] = "Student";
+		ELSE IF VARS[I] = "Impiegato" THEN VARS[I] = "Employee";
+		ELSE IF VARS[I] = "Libero professionista" THEN VARS[I] = "Freelancer";
+		ELSE IF VARS[I] = "Disoccupato" THEN VARS[I] = "Unemployed";
+		ELSE IF VARS[I] = "Pensionato" THEN VARS[I] = "Retired";
+		ELSE IF VARS[I] = "Casalinga/o" THEN VARS[I] = "Housewife/Housemen";
+	END;
+	DROP I;
 RUN;
-
 
 /*now we convert variables from character to numeric the english version*/
 
