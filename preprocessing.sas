@@ -96,12 +96,12 @@ run;
 proc sql;
      select name into :vname separated by ' '
      from dictionary.columns
-     where MEMNAME='WINE_IT'  AND type='char';
+     where MEMNAME='WINE_IT'  AND type='char' AND NAME <> "BUYING_REASON";
 quit;
-DATA tmp_Wine_IT;
-LENGTH &VNAME $200;
-FORMAT &VNAME $CHAR200.;
-INFORMAT &VNAME $CHAR200.;
+DATA tmp_Wine_IT2;
+LENGTH &VNAME $1000;
+FORMAT &VNAME $CHAR1000.;
+INFORMAT &VNAME $CHAR1000.;
 SET tmp_Wine_IT;
 run;
 
@@ -111,17 +111,20 @@ run;
 %macro translate;
     %do i = 1 %to &len;
         %let j = %scan(&vname,&i);
-        data tmp_Wine_IT;
-        	set tmp_Wine_IT;
-			&j = put(&j, translate.);
-        run;
+	        data tmp_Wine_IT2;
+    	    	set tmp_Wine_IT2;
+				&j = put(&j, translate.);
+        	run;
     %end;
 %mend;
 %translate;
+proc print data=tmp_wine_it;
 /*now we convert variables from character to numeric the english version*/
 DATA Translated_Wine_IT_sub;
 	SET tmp_Wine_IT;
 RUN;
+
+proc print data=translated_wine_it_sub;run;
 /*now we convert variables from character to numeric the english version*/
 
 Data COL_CONVERTED_EN (drop = WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE  );
@@ -186,21 +189,21 @@ DATA COL_MODIFIED_IT;
 	LENGTH &VNAME $ 1000;
 	SET COL_CONVERTED_IT;
 RUN;
-
+proc print data=col_modified_it; run;
 data APPENDED_DATASET;  
 set COL_MODIFIED_IT COL_MODIFIED_EN;
 run;
 data NAMING_CONVENTION (drop = i reasonn1-reasonn4 reasonal1-reasonal4 reasona1-reasona4);
 set APPENDED_DATASET;
-	array choices[4] $ 6 reasonn1-reasonn4 ("home" "gift" "party" "taste" );
-	array choices_italian[4] $ 32 reasonal1-reasonal4 ("Consumo casalingo"
-												   "Per un regalo"
-												   "Per un evento speciale/una festa"
-												   "Per provare un nuovo vino");
+	array choices[4] $ 6 reasonn1-reasonn4 ("party" "home" "gift" "taste" );
+	array choices_italian[4] $ 32 reasonal1-reasonal4 ("Per un evento speciale/una festa"
+													   "Consumo casalingo"
+												       "Per un regalo"												   
+												       "Per provare un nuovo vino");
 
-	array choices_english[4] $ 25 reasona1-reasona4 ("Home consumption" 
+	array choices_english[4] $ 25 reasona1-reasona4 ("For a special event/party"
+													 "Home consumption" 
 													 "To buy a gift"
-												   	 "For a special event/party"
 												   	 "To try a new wine");
 	do i = 1 to 4;
 		BUYING_REASON = tranwrd(BUYING_REASON, strip(choices_english[i]), strip(choices[i]));
