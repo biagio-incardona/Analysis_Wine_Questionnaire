@@ -7,7 +7,7 @@
 %let thamires_path="C:\Users\Thamires\Desktop\ADQ\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
 /*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
-%let current_path = &BIAGIO_PATH_WEB;
+%let current_path = &anna_path;
 
 PROC IMPORT OUT=Wine_IT
 	DATAFILE=&current_path
@@ -240,17 +240,21 @@ if WINE_KNOWLEDGE = "None" then var6 = 1;else if WINE_KNOWLEDGE = "Basic" then v
 		else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2; 
 		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; */
 		else var6=4;
-if BOTTLE_BUDGET = 'Less than 5€' then var7 = 1; else if BOTTLE_BUDGET = '5€ to less than 15€' then var7= 2; 
-		else if BOTTLE_BUDGET= '15€ to less than 30€' then var7=3; else if BOTTLE_BUDGET= '30€ to less than 45€' then var7=4; 
-		else if BOTTLE_BUDGET= '45€ to less than 60€' then var7=5; else if BOTTLE_BUDGET= '60€ and more' then var7=6;  else var7= 0;
+if BOTTLE_BUDGET = 'Less than 5€' then var7 = 1; 
+else if BOTTLE_BUDGET = '5€ to less than 15€' then var7= 2; 
+else if BOTTLE_BUDGET= '15€ to less than 30€' then var7=3; 
+else if BOTTLE_BUDGET= '30€ to less than 45€' then var7=4; 
+else if BOTTLE_BUDGET= '45€ to less than 60€' then var7=5; 
+else if BOTTLE_BUDGET= '60€ and more' then var7=6;  
+else var7= '';
 		
 if BUYING_EXPERIENCE = 'Never' then var8 = 1; else if BUYING_EXPERIENCE = '1-2 times per month' then var8= 2; 
 		else if BUYING_EXPERIENCE = '3-4 times per month' then var8= 3; else if BUYING_EXPERIENCE = '5-6 times per month' then var8= 4;
-		else if BUYING_EXPERIENCE = '7+ times per month' then var8= 5; else var8= 0;
+		else if BUYING_EXPERIENCE = '7+ times per month' then var8= 5; else var8= '';
 
 if WINE_BOTTLES = 'Less than 1 bottle' then var9= 1; else if WINE_BOTTLES= '1-3 bottles' then var9=2; else if WINE_BOTTLES= '4-6 bottles' then var9=3;
 				else if WINE_BOTTLES= '7-9 bottles' then var9=4; else if WINE_BOTTLES= '10-12 bottles' then var9=5;
-				else if WINE_BOTTLES= '12+ bottles' then var9=6; else var9= 0;
+				else if WINE_BOTTLES= '12+ bottles' then var9=6; else var9='';
 
 label var1 = 'WINE_TASTING'
 var2 = 'WINERY_VISIT'
