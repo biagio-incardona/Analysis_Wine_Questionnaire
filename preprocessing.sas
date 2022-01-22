@@ -118,10 +118,10 @@ run;
     %end;
 %mend;
 %translate;
-proc print data=tmp_wine_it;
+proc print data=tmp_wine_it2;
 /*now we convert variables from character to numeric the english version*/
 DATA Translated_Wine_IT_sub;
-	SET tmp_Wine_IT;
+	SET tmp_Wine_IT2;
 RUN;
 
 proc print data=translated_wine_it_sub;run;
