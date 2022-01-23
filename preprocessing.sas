@@ -98,7 +98,7 @@ value $translate
 	 "Dottorando di ricerca" = "Researcher"
 	 "Imprenditore" = "Entrepreneur"
 	 "Lavoratore agricolo"="Farmer"
-	 "agente di commercio" = "commercial agent";
+	 "Agente di commercio" = "Commercial agent";
 run;
 /*EXTRACT CHARVARIABLES*/
 proc sql;
