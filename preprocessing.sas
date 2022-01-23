@@ -436,6 +436,16 @@ ELSE IF LOCATION = "Other region in Italy (no Sicily)" THEN
 ELSE 
 	LOCATION = "Sicily";
 
+IF JOB = "Employee" THEN
+	JOB = "Employee, freelancer or student";
+ELSE IF JOB = "Freelancer" THEN
+	JOB = "Employee, freelancer or student";
+ELSE IF JOB = "Student" THEN
+	JOB = "Employee, freelancer or student";
+ELSE
+	JOB = "Other";
+
+
 
 RUN;
 
