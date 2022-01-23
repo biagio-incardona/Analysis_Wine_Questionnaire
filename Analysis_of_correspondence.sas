@@ -1,3 +1,8 @@
+DATA gender_fm;
+SET dataset;
+IF strip(GENDER) = "Prefer not to say" THEN DELETE;
+RUN;
+
 ods graphics on;
 
 /*Finding correlation between the variable gender and etna wine preferences*/
