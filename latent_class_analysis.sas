@@ -1,7 +1,5 @@
 /* take original dataset minus demographic and unused columns*/
-data lca_transformed(drop= DateTime Version Gender Age Education Location Job Buying_reason Age_Class);
-set dataset;
-run;
+
 
 /*transform all the columns into a compatible form to apply dichotomus latent class analys*/
 /*the logic of the macro is the following:
@@ -11,10 +9,13 @@ run;
 		3. assign 1 if the value is lower than or equal the median, 2 if the value is higher than the median
 */
 %macro lca_transform;
+	data lca_transformed;
+	set dataset(drop= DateTime Version Gender Age Education Location Job Buying_reason Age_Class);
+	run;
 	proc sql;
      	select name into :vname separated by ' '
      	from dictionary.columns
-    	where MEMNAME='lca_transformed';
+    	where MEMNAME='LCA_TRANSFORMED' and name <> 'AS' and name <> 'AT' and name <> 'AU' and name <> 'AV' and name <> 'AW'  and name <> 'AX';
 	quit;
 	%let len = %sysfunc(countw(&vname));
 	%DO I=1 %to &len;
@@ -37,17 +38,46 @@ run;
 		run;
 	%END;
 %mend;
-%lca_transform;
 
 /*apply LCA several times for nclass from 1 to 10*/
 %macro class (num);*allow to change part of the code;
-	proc lca data = lca_transform outest=lca_outest&num;
-		nclass &num;  
+	proc lca data = lca_transformed outest=lca_outest&num;
+		nclass &num; 
 		nstarts 300; *start again for more precise computations;
 		cores 15; *faster computation;
+		ITEMS _ALL_;
 		categories 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2; 
 		seed 87149;*random seed;
 		rho prior=1 ; 
 	run;
 %mend;
-%class(1);
+
+%macro apply;
+	%do i=1 %to 10;
+		%class(&i);
+		data lca_outest&i;
+		set lca_outest&i;
+		nclass=&i;
+		run;
+	%end;
+	data lca_comparison;
+	set lca_outest1-lca_outest10;
+	run;
+%mend;
+
+%lca_transform;
+%apply;
+
+
+PROC PRINT DATA=LCA_COMPARISON NOOBS LABEL;
+label nclass = "Number of Classes" log_likelihood="LL";
+var nclass log_likelihood aic bic;
+run;
+
+proc sgplot data=lca_comparison;
+series x=nclass y=aic / lineattrs=(color=blue);
+series x=nclass y=bic / lineattrs=(color=orange);
+keylegend / title="";
+scatter x=nclass y=aic / filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=blue);
+scatter x=nclass y=bic / filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=orange);
+run;
