@@ -10,11 +10,11 @@ ods graphics on;
 TITLE "Is there a connection between gender and Etna Wine Preference?";
 
 PROC SGPLOT DATA=data_correspondence;
-VBAR etnapreference / group=gender transparency=0.5;
+VBAR etnapreference / group=gender_fm transparency=0.5;
 RUN;
 
 PROC FREQ DATA=data_correspondence; 
-TABLES etnapreference*GENDER /  nopercent norow nocol
+TABLES etnapreference*gender_fm /  nopercent norow nocol
 			OUT=CONTEGGIO_FREQ
  			CHISQ
 		   	SPARSE;
@@ -27,7 +27,7 @@ PROC CORRESP DATA=data_correspondence
 			short plot(flip)	
 			DIMENS=1
 			 OUTC=COOR;
-TABLE etnapreference, GENDER;
+TABLE etnapreference, gender_fm;
 RUN;
 
 
@@ -59,29 +59,3 @@ TABLE Age_Class, etnapreference;
 RUN;
 
 
-/*Finding correlation between knowledge of wine and etna wine preferences*/
-
-TITLE "Is there a connection between level of knowledge of wine and Etna wine preference?";
-
-
-
-PROC SGPLOT DATA=data_correspondence;
-VBAR etnapreference / group=wineknowledge transparency=0.5;
-RUN;
-
-PROC FREQ DATA=data_correspondence; 
-TABLES wineknowledge*etnapreference /  nopercent norow nocol
-			OUT=CONTEGGIO_FREQ
- 			CHISQ
-		   	SPARSE;
-RUN;
-
-
-PROC CORRESP DATA=data_correspondence
-             ALL
-		     PRINT=PERCENT 
-			short plot(flip)	
-			DIMENS=1
-			 OUTC=COOR;
-TABLE wineknowledge, etnapreference;
-RUN;
