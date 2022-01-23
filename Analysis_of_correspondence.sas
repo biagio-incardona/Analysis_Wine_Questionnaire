@@ -114,3 +114,31 @@ PROC CORRESP DATA=data_correspondence
 TABLE LOCATION, etnapreference_ed;
 RUN;
 	
+
+/*Finding correlation between the variable job and etna wine preferences*/
+
+TITLE "Is there a connection between job and Etna Wine Preference?";
+
+
+
+PROC SGPLOT DATA=data_correspondence;
+VBAR etnapreference_ed / group=JOB transparency=0.5;
+RUN;
+
+PROC FREQ DATA=data_correspondence; 
+TABLES JOB*etnapreference_ed /  nopercent norow nocol
+			OUT=CONTEGGIO_FREQ
+ 			CHISQ
+		   	SPARSE;
+RUN;
+
+
+PROC CORRESP DATA=data_correspondence
+             ALL
+		     PRINT=PERCENT 
+			short plot(flip)	
+			DIMENS=1
+			 OUTC=COOR;
+TABLE JOB, etnapreference_ed;
+RUN;
+	
