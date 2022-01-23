@@ -419,6 +419,17 @@ ELSE IF etnapreference = "High" THEN
 ELSE
 	etnapreference_ed = "High";
 
+
+IF LOCATION = "Foreign EU country (no Italy)" THEN
+	LOCATION = "Out_of_Sicily";
+ELSE IF LOCATION = "Foreign not EU country (no Italy)" THEN
+	LOCATION = "Out_of_Sicily";
+ELSE IF LOCATION = "Other region in Italy (no Sicily)" THEN
+	LOCATION = "Out_of_Sicily";
+ELSE 
+	LOCATION = "Sicily";
+
+
 RUN;
 
 	
