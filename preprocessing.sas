@@ -91,7 +91,14 @@ value $translate
 	 "Libero professionista"  = "Freelancer "
 	 "Disoccupato"  = "Unemployed "
 	 "Pensionato"  = "Retired "
-	 "Casalinga/o"  = "Housewife/Housemen ";
+	 "Casalinga/o"  = "Housewife/Housemen "
+	 "Dipendente" = "Employee"
+	 "Docente" = "Teacher"
+	 "Finanziere" = "Financier"
+	 "Dottorando di ricerca" = "Researcher"
+	 "Imprenditore" = "Entrepreneur"
+	 "Lavoratore agricolo"="Farmer"
+	 "agente di commercio" = "commercial agent";
 run;
 /*EXTRACT CHARVARIABLES*/
 proc sql;
