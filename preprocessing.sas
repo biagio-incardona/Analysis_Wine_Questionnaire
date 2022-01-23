@@ -338,9 +338,9 @@ SET wine_imputed;
 IF age >= 0 AND age <= 17 THEN
 	Age_Class = "minor";
 ELSE IF age >= 18 AND age <= 24 THEN
-	Age_Class ="18-25";
+	Age_Class ="18-24";
 ELSE IF age >= 25 AND age <= 30 THEN
-	Age_Class = "24-30";
+	Age_Class = "25-30";
 ELSE IF age >= 31 AND age <= 50 THEN
 	Age_Class = "31-50";
 ELSE 
@@ -390,15 +390,38 @@ ELSE IF ETNA_PREFERENCE = 3  THEN
 ELSE
 	etnapreference = "Very_High";
 
-IF WINE_KNOWLEDGE = 1 THEN 
-	wineknowledge = "None   ";
-ELSE IF WINE_KNOWLEDGE = 2 THEN
-	wineknowledge = "Basic";
-ELSE IF WINE_KNOWLEDGE = 3 THEN
-	wineknowledge = "Medium";
-ELSE 
-	wineknowledge = "High";
-	RUN;
+IF Age_Class = "minor" THEN
+	Age_Class = "Under_30";
+ELSE IF Age_Class = "18-24" THEN
+	Age_Class = "Under_30";
+ELSE IF Age_Class = "25-30" THEN
+	Age_Class = "Under_30";
+ELSE IF Age_Class = "31-50" THEN
+	Age_Class = "Over_30";
+ELSE
+	Age_Class = "Over_30";
+
+IF EDUCATION = "High school" THEN
+	EDUCATION = "School level";
+ELSE IF EDUCATION = "Primary and medium school" THEN
+	EDUCATION = "School level";
+ELSE
+	EDUCATION = "University level";
+
+IF strip(GENDER) = "Prefer not to say" THEN DELETE;
+
+IF etnapreference = "Very_Low" THEN
+	etnapreference_ed = "Low     ";
+ELSE IF etnapreference = "Low" THEN
+	etnapreference_ed = "Low     ";
+ELSE IF etnapreference = "High" THEN
+	etnapreference_ed = "High";
+ELSE
+	etnapreference_ed = "High";
+
+RUN;
+
 	
+
 
  
