@@ -83,9 +83,3 @@ scatter x=nclass y=aic / filledoutlinedmarkers markerattrs=(symbol=circleFilled)
 scatter x=nclass y=bic / filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=orange);
 scatter x=nclass y=log_likelihood / Y2Axis filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=green);
 run;
-
-proc sgplot data=lca_comparison;
-series x=nclass y=log_likelihood / lineattrs=(color=green);
-keylegend / title="";
-scatter x=nclass y=log_likelihood / filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=green);
-run;
