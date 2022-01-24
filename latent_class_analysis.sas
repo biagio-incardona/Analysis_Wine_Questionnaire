@@ -36,16 +36,21 @@
 			if &j  <= floor(median_val) then &j = 1;
 			else &j = 2;
 		run;
+		data lca_transformed;
+		set lca_transformed;
+		id = _n_;
+		run;
 	%END;
 %mend;
 
 /*apply LCA several times for nclass from 1 to 10*/
 %macro class (num);*allow to change part of the code;
 	proc lca data = lca_transformed outest=lca_outest&num;
-		nclass &num; 
+		nclass &num;
+		id id;
 		nstarts 300; *start again for more precise computations;
 		cores 15; *faster computation;
-		ITEMS _ALL_;
+		ITEMS &vname;
 		categories 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2; 
 		seed 87149;*random seed;
 		rho prior=1 ; 
@@ -83,3 +88,48 @@ scatter x=nclass y=aic / filledoutlinedmarkers markerattrs=(symbol=circleFilled)
 scatter x=nclass y=bic / filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=orange);
 scatter x=nclass y=log_likelihood / Y2Axis filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=green);
 run;
+
+proc lca data = lca_transformed outparam=lca_outparam outpost = lca_outpost;
+	nclass 4; 
+	id id;
+	nstarts 300; *start again for more precise computations;
+	cores 15; *faster computation;
+	ITEMS &vname;
+	categories 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2; 
+	seed 87149;*random seed;
+	rho prior=1 ; 
+run;
+
+proc print data=lca_outparam;run;
+
+data transp(keep=id ESTLC1 ESTLC2 ESTLC3 ESTLC4);
+set lca_outparam;
+if _N_ > 1 then delete;
+id = _N_;
+run;
+
+proc transpose data=transp out = transposed;
+by id;
+var ESTLC1 ESTLC2 ESTLC3 ESTLC4;
+run;
+
+data cleaned(keep=_LABEL_ COL1);
+set transposed;
+_NAME_ = _LABEL_;
+run;
+
+proc print data=cleaned;run;
+
+proc sgplot data=cleaned;
+vbar _LABEL_ / response = COL1;
+yaxis label = "probability / ratio";
+xaxis display = (nolabel);
+run;
+
+
+/*show a priori probabilities*/
+proc SGPLOT data = lca_outparam;
+vbar ;
+title 'Lengths of cars';
+run;
+quit;
