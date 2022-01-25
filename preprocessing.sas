@@ -6,7 +6,7 @@
 %let thamires_path= "C:\Users\Thamires\Desktop\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
 /*used to make things faster for us*/
-%let current_path = &thamires_path;
+%let current_path = &gianluigi_path;
 
 PROC IMPORT OUT=Wine_IT
 	DATAFILE=&current_path
@@ -76,12 +76,12 @@ value $translate
 	 "7-9 bottiglie"  = "7-9 bottles"
 	 "10-12 bottiglie"  = "10-12 bottles"
 	 "12+ bottiglie"  = "12+ bottles"
-	 "Meno di 5â‚¬"  = "Less than 5â‚¬"
-	 "5â‚¬ - meno di 15â‚¬"  = "5â‚¬ to less than 15â‚¬"
-	 "15â‚¬ - meno di 30â‚¬"  = "15â‚¬ to less than 30â‚¬"
-	 "30â‚¬ - meno di 45â‚¬"  = "30â‚¬ to less than 45â‚¬"
-	 "45â‚¬ - meno di 60â‚¬"  = "45â‚¬ to less than 50â‚¬"
-	 "60â‚¬ o piÃ¹"  = "60â‚¬ and more "
+	 "Meno di 5€"  = "Less than 5€"
+	 "5€ - meno di 15€"  = "5€ to less than 15€"
+	 "15€ - meno di 30€"  = "15€ to less than 30€"
+	 "30€ - meno di 45€"  = "30€ to less than 45€"
+	 "45€ - meno di 60€"  = "45€ to less than 50€"
+	 "60€ o più"  = "60€ and more "
 	 "Non lo so"  = "I don't know "
 	 "Donna"  = "Female "
 	 "Uomo"  = "Male "
@@ -152,7 +152,6 @@ Array old_var(4) $ WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE ;
 Array new_var(4) var1-var4;
 Do i = 1 to 4;
 		new_var(i) = input(old_var(i), best.); 
-		/*if new_var(i)=. then new_var(i)=0;*/
 label var1= 'WHITE_WINE'
 var2= 'RED_WINE'
 var3= 'SWEET_WINE'
@@ -162,7 +161,6 @@ rename var1= WHITE_WINE
 var2= RED_WINE
 var3= ROSE_WINE
 var4= SPARKLING_WINE;
-
 
 END;
 OPTIONS MISSING = 0;
@@ -251,44 +249,27 @@ data DUMMIFIED_WINE_EN (DROP = j choice1-choice4);
 		else choices[j] = 0;
 	end;
 run;
-
-/*reorder the variables*/
-data reordered_final_version;
-retain WINE_PREFERENCE BEER_PREFERENCE SOFT_PREFERENCE COCKTAIL_PREFERENCE WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE WINE_TASTING WINERY_VISIT
-WINE_COURSE WINE_KNOWLEDGE BUYING_EXPERIENCE WINE_BOTTLES SUPERMARKET WINE_SHOP ONLINE_SHOP GRAPE_ORIGIN GRAPE_VARIETY
-BUDGET_FRIENDLY BRAND_AWARNESS VINTAGE LABEL_INFO PACKAGING PROMOTION BOTTLE_BUDGET BUYING_FREQUENCY 
-/*BUYING_REASON*/ PARTY GIFT HOME TASTE
-ETNA_DOC ETNA_BUYING ETNA_PREFERENCE ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPENSIVE ETNA_QUALITY ETNA_RECOMMENDATION 
-GENDER AGE EDUCATION LOCATION JOB;
-set DUMMIFIED_WINE_EN;
-run;
-
 /*tranform categorical variable in numerical */
 Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE BOTTLE_BUDGET
 									BUYING_EXPERIENCE WINE_BOTTLES);
-Set reordered_final_version;
+Set DUMMIFIED_WINE_EN;
 Array old_var(9) $ WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE BOTTLE_BUDGET BUYING_EXPERIENCE WINE_BOTTLES ;
 Array new_var(9) var1-var9;
 Do i = 1 to 4;
 	if old_var(i) = 'No' then new_var(i) = 0; else new_var(i) = 1;
 End;
-/*Do i= 5 to 6;
-if old_var(i) = 'Yes' then new_var(i) = 1; else if old_var(i) = 'No' then new_var(i) = -1; else if old_var(i)= 'Si' then new_var(i)= 1;else new_var(i)= 0;
-end;*/
-if ETNA_BUYING = 'Yes' then var5 = 1; else if ETNA_BUYING = 'No' then var5 = -1;/*else if ETNA_BUYING='Si' then var5=1; */else var5 = 0;
+
+if ETNA_BUYING = 'Yes' then var5 = 1; else if ETNA_BUYING = 'No' then var5 = -1; else var5 = 0;
 if WINE_KNOWLEDGE = "None" then var6 = 1;else if WINE_KNOWLEDGE = "Basic" then var6 = 2; else if WINE_KNOWLEDGE = "Medium" then var6 = 3;
 		else if WINE_KNOWLEDGE= "Basic (amateur knowledge level)" then var6= 2; 
 		else if WINE_KNOWLEDGE = "Medium (semi-professional knowledge level)" then var6=3; 
-		/*else if WINE_KNOWLEDGE= 'Nessuna' then var6= 1; else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2;  
-		else if WINE_KNOWLEDGE= "Di base (conoscenza amatoriale)" then var6= 2; 
-		else if WINE_KNOWLEDGE= "Media (conoscenza semi-professionale)" then var6= 3; */
 		else var6=4;
-if BOTTLE_BUDGET = 'Less than 5â‚¬' then var7 = 1; 
-else if BOTTLE_BUDGET = '5â‚¬ to less than 15â‚¬' then var7= 2; 
-else if BOTTLE_BUDGET= '15â‚¬ to less than 30â‚¬' then var7=3; 
-else if BOTTLE_BUDGET= '30â‚¬ to less than 45â‚¬' then var7=4; 
-else if BOTTLE_BUDGET= '45â‚¬ to less than 60â‚¬' then var7=5; 
-else if BOTTLE_BUDGET= '60â‚¬ and more' then var7=6;  
+if BOTTLE_BUDGET = 'Less than 5€' then var7 = 1; 
+else if BOTTLE_BUDGET = '5€ to less than 15€' then var7= 2; 
+else if BOTTLE_BUDGET= '15€ to less than 30€' then var7=3; 
+else if BOTTLE_BUDGET= '30€ to less than 45€' then var7=4; 
+else if BOTTLE_BUDGET= '45€ to less than 60€' then var7=5; 
+else if BOTTLE_BUDGET= '60€ and more' then var7=6;  
 else var7= '';
 		
 if BUYING_EXPERIENCE = 'Never' then var8 = 1; else if BUYING_EXPERIENCE = '1-2 times per month' then var8= 2; 
@@ -475,5 +456,3 @@ RUN;
 
 	
 
-
- 
