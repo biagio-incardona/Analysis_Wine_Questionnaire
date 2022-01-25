@@ -5,7 +5,7 @@
 %let anna_path="C:\Users\Annabelle\Downloads\WINE_SURVEY_RESPONSES_18012022.xlsx";
 %let thamires_path= "C:\Users\Thamires\Desktop\Analysis_Wine_Questionnaire\WINE_SURVEY_RESPONSES_18012022.xlsx";
 
-/*please put here your local path and use current_path in the three import below, so that we just need to change it once and not three times*/
+/*used to make things faster for us*/
 %let current_path = &thamires_path;
 
 PROC IMPORT OUT=Wine_IT
@@ -27,28 +27,35 @@ PROC IMPORT OUT=Naming_Convention
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="NAMING CONVENTION";
 RUN;
-/*resize datasets*/
+
+/*resize italian datasets (the excel file contains blank rows that are considered part of the table)*/
 DATA WINE_IT_sub;
 set WINE_IT;
 if _N_ <= 196 then output;
 run; 
 
+/*resize english datasets (the excel file contains blank rows that are considered part of the table)*/
 DATA WINE_EN_sub;
 set Wine_EN;
 if _N_ <= 51 then output;
 run;
+
 /*TRANSLATE ITALIAN DATASET TO ENGLISH*/
+
 /*load the naming convention in a list*/
 proc sql noprint;
 select 'Naming_convention'n into :collist separated by ' ' 
 from Naming_Convention nc;
 quit;
+
 /*length of the list, how many variables*/
 %let len = %sysfunc(countw(&collist));
-/*in order to do not modify the original dataset, at the end we will remove this step*/
+
+/*in order to do not modify the original dataset*/
 data tmp_Wine_IT;
 	set Wine_IT_sub;
 run;
+
 /*defined a sort of dictionary to translate, it is the fastest structure i was able to find*/
 proc format;
 value $translate
@@ -100,12 +107,15 @@ value $translate
 	 "Lavoratore agricolo"="Farmer"
 	 "Agente di commercio" = "Commercial agent";
 run;
-/*EXTRACT CHARVARIABLES*/
+
+/*EXTRACT CHAR VARIABLES*/
 proc sql;
      select name into :vname separated by ' '
      from dictionary.columns
      where MEMNAME='WINE_IT'  AND type='char' AND NAME <> "BUYING_REASON";
 quit;
+
+/*change length in order to avoid truncations*/
 DATA tmp_Wine_IT2;
 LENGTH &VNAME $1000;
 FORMAT &VNAME $CHAR1000.;
@@ -113,6 +123,7 @@ INFORMAT &VNAME $CHAR1000.;
 SET tmp_Wine_IT;
 run;
 
+/*number of char variables*/
 %let len = %sysfunc(countw(&vname));
 
 /*macro to translate the italian responses*/
@@ -125,16 +136,16 @@ run;
         	run;
     %end;
 %mend;
+
+/*call the macro*/
 %translate;
-proc print data=tmp_wine_it2;
-/*now we convert variables from character to numeric the english version*/
+
+/*in order to don't modify the previous dataset*/
 DATA Translated_Wine_IT_sub;
 	SET tmp_Wine_IT2;
 RUN;
 
-proc print data=translated_wine_it_sub;run;
-/*now we convert variables from character to numeric the english version*/
-
+/*convert variables from character to numeric in the english version*/
 Data COL_CONVERTED_EN (drop = WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE  );
 Set WINE_EN_sub;
 Array old_var(4) $ WHITE_WINE RED_WINE ROSE_WINE SPARKLING_WINE ;
@@ -158,7 +169,7 @@ OPTIONS MISSING = 0;
 run;
 
 
-/*now we convert variables from character to numeric the italian version*/
+/*now we convert variables from character to numeric in the italian version*/
 Data COL_CONVERTED_IT (drop = WHITE_WINE  ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE );
 Set TRANSLATED_WINE_IT_sub;
 Array old_var(5) $ WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE ;
@@ -182,25 +193,37 @@ var5= SWEET_WINE;
 END;
 
 run;
-/*NOW WE CAN APPEND THE 2 DATASETS */
+
+/*APPEND THE 2 DATASETS */
 /*set all char variables to same length (don't doing this may cause truncation in the values)*/
 proc sql noprint;
      select name into :vname separated by ' '
      from dictionary.columns
      where MEMNAME='COL_CONVERTED_EN'  AND type='char';
 quit;
+
 data COL_MODIFIED_EN;
      length &vname $ 1000; /*even though this is a waste of space, with less than 300 rows this is not a big deal*/
      set COL_CONVERTED_EN;
 run;
+
 DATA COL_MODIFIED_IT;
 	LENGTH &VNAME $ 1000;
 	SET COL_CONVERTED_IT;
 RUN;
+
+/*append datasets*/
 proc print data=col_modified_it; run;
 data APPENDED_DATASET;  
 set COL_MODIFIED_IT COL_MODIFIED_EN;
 run;
+
+/*apply naming convention decided in class:
+	for a special event/party -> party
+	home consumption -> home
+	to buy a gift -> gift
+	to try a new wine -> taste
+*/
 data NAMING_CONVENTION (drop = i reasonn1-reasonn4 reasonal1-reasonal4 reasona1-reasona4);
 set APPENDED_DATASET;
 	array choices[4] $ 6 reasonn1-reasonn4 ("party" "home" "gift" "taste" );
@@ -218,6 +241,7 @@ set APPENDED_DATASET;
 		BUYING_REASON = tranwrd(BUYING_REASON, strip(choices_italian[i]), strip(choices[i]));
 	end;
 run;
+
 /*split the reasons in the dummy variables*/
 data DUMMIFIED_WINE_EN (DROP = j choice1-choice4);
 	set NAMING_CONVENTION;
@@ -228,7 +252,8 @@ data DUMMIFIED_WINE_EN (DROP = j choice1-choice4);
 		else choices[j] = 0;
 	end;
 run;
-/*proc print data=finalversion; run;*/
+
+/*reorder the variables*/
 data reordered_final_version;
 retain WINE_PREFERENCE BEER_PREFERENCE SOFT_PREFERENCE COCKTAIL_PREFERENCE WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE WINE_TASTING WINERY_VISIT
 WINE_COURSE WINE_KNOWLEDGE BUYING_EXPERIENCE WINE_BOTTLES SUPERMARKET WINE_SHOP ONLINE_SHOP GRAPE_ORIGIN GRAPE_VARIETY
@@ -238,7 +263,7 @@ ETNA_DOC ETNA_BUYING ETNA_PREFERENCE ETNA_FLAVOR SICILIAN_EXCELLENCES ETNA_EXPEN
 GENDER AGE EDUCATION LOCATION JOB;
 set DUMMIFIED_WINE_EN;
 run;
-proc print data= reordered_final_version;run;
+
 /*tranform categorical variable in numerical */
 Data new_reordered_final_version (drop = WINE_TASTING WINERY_VISIT WINE_COURSE ETNA_DOC ETNA_BUYING WINE_KNOWLEDGE BOTTLE_BUDGET
 									BUYING_EXPERIENCE WINE_BOTTLES);
@@ -295,10 +320,8 @@ var8 = BUYING_EXPERIENCE
 var9 = WINE_BOTTLES;
 
 run;
-proc print data= new_reordered_final_version;run;
 
 /*REORDERING COLUMNS*/
-
 data finaldata (drop = i);
 retain DATE VERSION WINE_PREFERENCE BEER_PREFERENCE SOFT_PREFERENCE COCKTAIL_PREFERENCE WHITE_WINE ROSE_WINE RED_WINE SPARKLING_WINE SWEET_WINE WINE_TASTING WINERY_VISIT
 WINE_COURSE WINE_KNOWLEDGE BUYING_EXPERIENCE WINE_BOTTLES SUPERMARKET WINE_SHOP ONLINE_SHOP GRAPE_ORIGIN GRAPE_VARIETY
@@ -310,6 +333,7 @@ set new_reordered_final_version;
 run;
 
 /*HANDELING MISSING VALUE*/
+
 /*Imputing Categorical values with mode */
 proc freq data=finaldata order=freq noprint;
 	TABLES  buying_reason/NOPERCENT NOCUM out=buying_reason_freq ; 
@@ -321,13 +345,14 @@ data wine_categorical;
 	set finaldata;
 	if missing(buying_reason) then buying_reason = "&mode_reason";  
 run;
+
 /*Imputing Numeric values with mean value*/
 proc stdize data=wine_categorical out=wine_numeric  
    REPONLY
    method= MEDIAN;
    var  WHITE_WINE--ETNA_RECOMMENDATION; 
 run;
-proc print data= wine_numeric; run;
+
 /* Round Imputed Values*/
 data wine_imputed;
 	set wine_numeric;
@@ -369,10 +394,10 @@ SET No_Minors;
 	format DateTime datetime20.;
 RUN;
 
+/*excel considers these columns part of the table but they are empty*/
 DATA dataset_drop (DROP = AS AT AU AV AW AX DATE); 
 SET finaldataset;
 RUN;
-proc print data= dataset_drop; run;
 DATA dataset ;
 retain DateTime;
 set dataset_drop;
