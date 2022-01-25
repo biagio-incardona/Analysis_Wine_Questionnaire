@@ -116,11 +116,22 @@
 /**/
 /*13. For what reason have you bought wine in the last 3 months?*/
 /**/
-%cat_univar_plots(&data, PARTY, "During the pandemic, did the frequency with which you buy wine change?");
-%cat_univar_plots(&data, GIFT, "During the pandemic, did the frequency with which you buy wine change?");
-%cat_univar_plots(&data, HOME, "During the pandemic, did the frequency with which you buy wine change?");
-%cat_univar_plots(&data, TASTE, "During the pandemic, did the frequency with which you buy wine change?");
-/*%cat_univar_plots(&data, reasonS_wine_shopping_3_months, "For what reason have you bought wine in the last 3 months?");*/
+proc sort data=&data(keep= datetime home gift taste party) out=sorted_data;
+by datetime;
+run;
+PROC TRANSPOSE DATA=sorted_data out=transposed_data;
+    BY DateTime;
+    VAR home gift taste party;
+RUN;
+
+data cleaned_data;
+set transposed_data;
+if col1=0 then delete;
+rename _NAME_=REASON;
+label _NAME_=REASON;
+run;
+
+%cat_univar_plots(cleaned_data, reason, "For what reason have you bought wine in the last 3 months?");
 
 /**/
 /*14. Have you ever heard about Etna DOC wine before?*/
@@ -165,21 +176,6 @@
 /*20. Please enter your age*/
 /**/
 
-/* original variable histogram */
-
-proc sgplot data=&data;
-    histogram age;
-    density age / type=normal;
-    title "Respondants age";
-run;
-TITLE;
-
-/*original variable boxplot*/
-proc sgplot data=&data;
- vbox age;
-run;
-
-/*categorical variable*/
 %cat_univar_plots(&data, Age_Class, "Respondants age");
 
 /**/
