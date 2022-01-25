@@ -15,15 +15,15 @@ proc irt data=dataset_drop(drop =
  job
  datetime
  buying_reason
- cocktail_preference 
- budget_friendly 
- label_info 
- packaging 
- bottle_budget 
- buying_frequency 
- party 
- etna_preference
- etna_recommendation
+ budget_friendly
+ Packaging
+ Promotion
+ Etna_Preference
+ Cocktail_Preference
+ Label_Info
+ Bottle_Budget
+ Buying_Frequency
+ Etna_Recommendation
  ) plots=(scree iic tic);
 run;
 
@@ -83,7 +83,7 @@ proc irt data=dataset_drop plots=(scree iic tic);
 run;
 
 /*exploratory*/
-proc irt data=dataset_drop nfact=2 plots=(scree iic tic);
+proc irt data=dataset_drop nfact=2;
  var   BUYING_EXPERIENCE
  	   WINE_BOTTLES
  	   SUPERMARKET
@@ -129,48 +129,45 @@ proc irt data=dataset_drop;
  	   HOME
  	   TASTE
  	   ;
-factor Factor1 -> SUPERMARKET WINE_SHOP ONLINE_SHOP GRAPE_ORIGIN GRAPE_VARIETY BUDGET_FRIENDLY PACKAGING PROMOTION PARTY VINTAGE,
-	   Factor2 -> BUYING_EXPERIENCE WINE_BOTTLES BRAND_AWARNESS /*VINTAGE*/ LABEL_INFO BOTTLE_BUDGET BUYING_FREQUENCY GIFT HOME TASTE;
+factor Factor1 -> BUYING_EXPERIENCE WINE_BOTTLES BRAND_AWARNESS LABEL_INFO BUYING_FREQUENCY PARTY GIFT HOME TASTE,
+	   Factor2 -> SUPERMARKET WINE_SHOP GRAPE_ORIGIN ONLINE_SHOP GRAPE_VARIETY BUDGET_FRIENDLY VINTAGE PACKAGING PROMOTION BOTTLE_BUDGET;
 run;
 
 /*factor1*/
 proc irt data=dataset_drop plots=(scree iic tic);
- var   SUPERMARKET
- 	   WINE_SHOP
- 	   ONLINE_SHOP
- 	   GRAPE_ORIGIN
- 	   GRAPE_VARIETY
- 	   BUDGET_FRIENDLY
- 	   VINTAGE
- 	   PACKAGING
- 	   PROMOTION
+ var   BUYING_EXPERIENCE
+ 	   WINE_BOTTLES
+ 	   BRAND_AWARNESS
+ 	   LABEL_INFO
+ 	   BUYING_FREQUENCY
  	   PARTY
+ 	   GIFT
+ 	   HOME
+ 	   TASTE
+ 	   ;
+run;
+
+/*REMOVED BRAND_AWARNESS AND LABEL_INFO*/
+proc irt data=dataset_drop plots=(scree iic tic);
+ var   BUYING_EXPERIENCE
+ 	   WINE_BOTTLES
+ 	   GIFT
+ 	   HOME
+ 	   TASTE
  	   ;
 run;
 /* factor2*/
 proc irt data=dataset_drop plots=(scree iic tic);
- var   BUYING_EXPERIENCE
- 	   WINE_BOTTLES
- 	   BRAND_AWARNESS
- 	   LABEL_INFO
- 	   BOTTLE_BUDGET
- 	   BUYING_FREQUENCY
- 	   GIFT
- 	   HOME
- 	   TASTE
- 	   ;
-run;
-/*factor2 removed*/
-proc irt data=dataset_drop plots=(scree iic tic);
- var   BUYING_EXPERIENCE
- 	   WINE_BOTTLES
- 	   BRAND_AWARNESS
- 	   LABEL_INFO
- 	   BOTTLE_BUDGET
- 	   
- 	   GIFT
- 	   HOME
- 	   TASTE
+ var   SUPERMARKET
+ 	   WINE_SHOP 
+ 	   ONLINE_SHOP 
+ 	   GRAPE_ORIGIN 
+ 	   GRAPE_VARIETY 
+ 	   BUDGET_FRIENDLY 
+ 	   VINTAGE
+ 	   PACKAGING 
+ 	   PROMOTION 
+ 	   BOTTLE_BUDGET 
  	   ;
 run;
 
