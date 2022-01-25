@@ -147,7 +147,7 @@ proc irt data=dataset_drop plots=(scree iic tic);
  	   ;
 run;
 
-/*REMOVED BRAND_AWARNESS AND LABEL_INFO*/
+/*REMOVED NO CONTRIBUTIONS*/
 proc irt data=dataset_drop plots=(scree iic tic);
  var   BUYING_EXPERIENCE
  	   WINE_BOTTLES
