@@ -20,7 +20,7 @@ PROC IMPORT OUT=Wine_EN
 	OPTIONS VALIDVARNAME=V7;
 	SHEET="EN";
 RUN;
-proc print data=Wine_EN;run;
+
 PROC IMPORT OUT=Naming_Convention
 	DATAFILE=&current_path
 	DBMS=XLSX REPLACE;
@@ -213,7 +213,6 @@ DATA COL_MODIFIED_IT;
 RUN;
 
 /*append datasets*/
-proc print data=col_modified_it; run;
 data APPENDED_DATASET;  
 set COL_MODIFIED_IT COL_MODIFIED_EN;
 run;
