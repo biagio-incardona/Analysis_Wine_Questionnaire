@@ -13,7 +13,7 @@ run;
 
 
 /* scree plot for factor useful to understand the n of factors */
-PROC FACTOR DATA=  
+PROC FACTOR DATA=  dataset
 PRIORS=SMC 
 outstat=communal_ndefault(WHERE=(_TYPE_="CORR")) 
 PLOTS=SCREE(UNPACK) 
@@ -32,6 +32,7 @@ run;
 ods graphics off;
 
 /* now we realized 7 is the number of factors that explain 100% of the total explained variance, we run proc factor using n=7*/
+ods graphics on;
 PROC FACTOR DATA=dataset
 OUT= FACTORS
 N=7
@@ -40,9 +41,9 @@ ROTATE= NONE
 PLOTS=SCREE(UNPACK)
 REORDER
 ROUND FUZZ=0.3 RESIDUAL noprint;
-
 VAR WINE_PREFERENCE--SWEET_WINE WINE_KNOWLEDGE--BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
 RUN;
+ods graphics off;
 
 /*then we compute the correlations*/
 PROC CORR DATA= FACTORS noprint
@@ -67,6 +68,7 @@ RUN;
 /*PROC PRINT DATA=CORR;RUN;*/
 
 /*now we apply the VARIMAX rotation on the first 4 factors */
+ods graphics on;
 PROC FACTOR DATA=dataset
 OUT= FACTORS
 N=4
@@ -78,7 +80,9 @@ FUZZ=0.30  RESIDUAL
 FLAG=0.30;
 VAR WINE_PREFERENCE--SWEET_WINE WINE_KNOWLEDGE--BUYING_FREQUENCY ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
 RUN;
+ods graphics off;
 /* analysis dropping Cocktail_Preference, Online_Shop, Buying_Frequency and Soft_Preference*/
+ods graphics on;
 PROC FACTOR DATA=dataset 
 OUT= FACTORS
 N=4
@@ -90,6 +94,7 @@ FUZZ=0.30  RESIDUAL
 FLAG=0.30;
 VAR WINE_PREFERENCE WHITE_WINE--SWEET_WINE WINE_KNOWLEDGE--WINE_SHOP GRAPE_ORIGIN--BOTTLE_BUDGET ETNA_PREFERENCE--ETNA_RECOMMENDATION; 
 RUN;
+ods graphics off;
 
 /*Standardization and Plot*/
 
