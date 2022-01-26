@@ -1,7 +1,5 @@
-/*set path*/
+/* take original dataset minus demographic and unused columns*/
 
-%let current_path = "C:\Users\biagi\Desktop\university\Second Year\First Semester\questionnaire\project\Analysis_Wine_Questionnaire\LcaGraphicsV2.sas";
-%INCLUDE &current_path;
 
 /*transform all the columns into a compatible form to apply dichotomus latent class analys*/
 /*the logic of the macro is the following:
@@ -91,7 +89,7 @@ scatter x=nclass y=bic / filledoutlinedmarkers markerattrs=(symbol=circleFilled)
 scatter x=nclass y=log_likelihood / Y2Axis filledoutlinedmarkers markerattrs=(symbol=circleFilled) markeroutlineattrs=(color=green);
 run;
 
-proc lca data = lca_transformed outest = lca_outest4 outparam=lca_outparam outpost = lca_outpost;
+proc lca data = lca_transformed outparam=lca_outparam outpost = lca_outpost;
 	nclass 4; 
 	id id;
 	nstarts 300; *start again for more precise computations;
@@ -102,7 +100,8 @@ proc lca data = lca_transformed outest = lca_outest4 outparam=lca_outparam outpo
 	rho prior=1 ; 
 run;
 
-/*preprocess to plot a-priori probabilities*/
+proc print data=lca_outparam;run;
+
 data transp(keep=id ESTLC1 ESTLC2 ESTLC3 ESTLC4);
 set lca_outparam;
 if _N_ > 1 then delete;
@@ -119,15 +118,43 @@ set transposed;
 _NAME_ = _LABEL_;
 run;
 
-/*show a priori probabilities*/
+proc print data=cleaned;run;
+
 proc sgplot data=cleaned;
 vbar _LABEL_ / response = COL1;
 yaxis label = "probability / ratio";
 xaxis display = (nolabel);
 run;
 
-/*show table lca_outpost*/
-proc print 
-	data=lca_outpost;
+
+/*show a priori probabilities*/
+proc SGPLOT data = lca_outparam;
+vbar ;
+title 'Lengths of cars';
+run;
+quit;
+
+proc freq data = lca_outpost; 
+table BEST;
 run;
 
+data dataset;
+set dataset;
+id=_n_;
+run;
+
+proc sql; 
+create table data_cla as
+ select 
+ 	BEST as Class,
+    gender,
+ 	age, 
+ 	LOCATION, 
+ 	EDUCATION, 
+ 	JOB 
+from dataset as d Inner join lca_outpost as l on
+d.id=l.id; 
+run; 
+
+proc print data=data_cla;
+run;
